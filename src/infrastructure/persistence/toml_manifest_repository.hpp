@@ -1,0 +1,11 @@
+#pragma once
+#include "infrastructure/persistence/toml_manifest_mapper.hpp"
+#include "lib/ports/manifest_repository.hpp"
+namespace crumb::infrastructure {
+class TomlManifestRepository final : public ports::ManifestRepository {
+public:
+    std::expected<std::optional<domain::DirectoryManifest>, std::string> load(const domain::DirectoryPath&) override;
+    std::expected<void, std::string> save(const domain::DirectoryManifest&) override;
+private: TomlManifestMapper mapper_;
+};
+}

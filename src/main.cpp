@@ -1,6 +1,7 @@
-#include <iostream>
+#include "boundary/cli/command_router.hpp"
+#include "infrastructure/composition/application_builder.hpp"
 
-int main() {
-    std::cout << "crumb\n";
-    return 0;
+int main(int argc, char** argv) {
+    crumb::infrastructure::ApplicationComponents components;
+    return crumb::boundary::CommandRouter(components.reconcile).run(argc, argv);
 }
