@@ -1,7 +1,7 @@
 #include "lib/application/reconcile_directory.hpp"
+#include "domain/directory_manifest.hpp"
 #include "domain/file_identity_matcher.hpp"
 
-#include <algorithm>
 
 namespace crumb::application {
 std::expected<ReconcileResult, std::string> ReconcileDirectory::execute(const domain::DirectoryPath& directory) {

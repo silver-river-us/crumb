@@ -1,7 +1,6 @@
 #pragma once
 #include "lib/ports/filesystem.hpp"
 #include "lib/ports/metadata_extractor.hpp"
-#include <filesystem>
 namespace crumb::infrastructure {
 class NativeFileSystem final : public ports::FileSystem, public ports::MetadataExtractor {
 public:

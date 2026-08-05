@@ -1,12 +1,13 @@
 #pragma once
 
-#include "domain/directory_manifest.hpp"
+#include "domain/value_objects/value_objects.hpp"
 #include "lib/ports/clock.hpp"
 #include "lib/ports/filesystem.hpp"
 #include "lib/ports/fingerprint_service.hpp"
 #include "lib/ports/id_generator.hpp"
 #include "lib/ports/manifest_repository.hpp"
 #include "lib/ports/metadata_extractor.hpp"
+#include <cstddef>
 #include <expected>
 #include <string>
 

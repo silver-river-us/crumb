@@ -35,7 +35,7 @@ target_include_directories(crumb_infrastructure PUBLIC src src/lib)
 target_link_libraries(crumb_infrastructure PRIVATE crumb_lib)
 
 add_executable(crumb src/main.cpp)
-target_link_libraries(crumb PRIVATE crumb_lib crumb_boundary crumb_infrastructure)
+target_link_libraries(crumb PRIVATE crumb_boundary crumb_infrastructure)
 
 target_compile_options(crumb PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall;-Wextra;-Wpedantic>
@@ -46,6 +46,6 @@ include(CTest)
 if(BUILD_TESTING)
     add_test(NAME crumb_runs COMMAND crumb)
     add_executable(crumb_manifest_tests tests/manifest_tests.cpp)
-    target_link_libraries(crumb_manifest_tests PRIVATE crumb_lib crumb_infrastructure)
+    target_link_libraries(crumb_manifest_tests PRIVATE crumb_infrastructure)
     add_test(NAME crumb_manifest_tests COMMAND crumb_manifest_tests)
 endif()
