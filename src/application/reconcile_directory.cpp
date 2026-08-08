@@ -2,6 +2,8 @@
 #include "domain/directory_manifest.hpp"
 #include "domain/file_identity_matcher.hpp"
 
+#include <vector>
+
 namespace crumb::application {
 std::expected<ReconcileResult, std::string> ReconcileDirectory::execute(const domain::DirectoryPath& directory) {
     auto loaded = manifests_.load(directory);

@@ -17,11 +17,8 @@ target_include_directories(crumb_lib INTERFACE src src/lib)
 target_compile_features(crumb_lib INTERFACE cxx_std_23)
 
 add_library(crumb_application
-
-    src/application/move_file.cpp
     src/application/reconcile_directory.cpp
     src/application/rebuild_search_index.cpp
-
     src/application/search_manifest.cpp
 )
 target_include_directories(crumb_application PUBLIC src src/lib)

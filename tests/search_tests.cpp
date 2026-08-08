@@ -29,11 +29,6 @@ public:
         return std::vector<crumb::domain::FileSnapshot>{};
     }
 
-    std::expected<void, std::string> move_file(
-        const crumb::domain::DirectoryPath&, const crumb::domain::FileName&,
-        const crumb::domain::DirectoryPath&, const crumb::domain::FileName&) override {
-        return {};
-    }
 
     std::expected<std::vector<crumb::domain::DirectoryPath>, std::string>
     list_directories_recursive(const crumb::domain::DirectoryPath& directory) override {

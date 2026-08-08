@@ -85,11 +85,7 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> NativeFileSystem::
     std::ranges::sort(result, [](const auto& a, const auto& b) { return a.name.value() < b.name.value(); });
     return result;
 }
-std::expected<void, std::string> NativeFileSystem::move_file(const domain::DirectoryPath& source, const domain::FileName& old_name,
-                                                              const domain::DirectoryPath& destination, const domain::FileName& new_name) {
-    try { std::filesystem::rename(std::filesystem::path(source.value()) / old_name.value(), std::filesystem::path(destination.value()) / new_name.value()); return {}; }
-    catch (const std::exception& error) { return std::unexpected(error.what()); }
-}
+
 std::expected<domain::FileMetadata, std::string> NativeFileSystem::extract(const domain::DirectoryPath& directory, const domain::FileName& name, domain::FileMetadata base) {
     const auto dot = name.value().rfind('.');
     base.title = name.value().substr(0, dot);
