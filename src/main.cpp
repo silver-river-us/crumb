@@ -3,5 +3,5 @@
 
 int main(int argc, char** argv) {
     crumb::infrastructure::ApplicationComponents components;
-    return crumb::boundary::CommandRouter(components.reconcile).run(argc, argv);
+    return crumb::boundary::CommandRouter(components.reconcile, components.search).run(argc, argv);
 }

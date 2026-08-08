@@ -7,19 +7,27 @@
 #include "lib/ports/id_generator.hpp"
 #include "lib/ports/manifest_repository.hpp"
 #include "lib/ports/metadata_extractor.hpp"
+#include "lib/ports/search_index_repository.hpp"
 #include <cstddef>
 #include <expected>
 #include <string>
 
 namespace crumb::application {
-struct ReconcileResult { std::size_t added{}; std::size_t updated{}; std::size_t removed{}; };
+struct ReconcileResult {
+    std::size_t scanned{};
+    std::size_t added{};
+    std::size_t updated{};
+    std::size_t removed{};
+};
 class ReconcileDirectory {
 public:
     ReconcileDirectory(ports::ManifestRepository& manifests, ports::FileSystem& filesystem,
                        ports::FingerprintService& fingerprints, ports::MetadataExtractor& extractor,
-                       ports::IdGenerator& ids, ports::Clock& clock)
-        : manifests_(manifests), filesystem_(filesystem), fingerprints_(fingerprints), extractor_(extractor), ids_(ids), clock_(clock) {}
+                       ports::IdGenerator& ids, ports::Clock& clock,
+                       ports::SearchIndexRepository* index = nullptr)
+        : manifests_(manifests), filesystem_(filesystem), fingerprints_(fingerprints), extractor_(extractor), ids_(ids), clock_(clock), index_(index) {}
     std::expected<ReconcileResult, std::string> execute(const domain::DirectoryPath& directory);
+    std::expected<ReconcileResult, std::string> execute_recursive(const domain::DirectoryPath& directory);
 private:
     ports::ManifestRepository& manifests_;
     ports::FileSystem& filesystem_;
@@ -27,5 +35,6 @@ private:
     ports::MetadataExtractor& extractor_;
     ports::IdGenerator& ids_;
     ports::Clock& clock_;
+    ports::SearchIndexRepository* index_{};
 };
 }
