@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <expected>
 #include <string>
-#include <vector>
+
 
 namespace crumb::ports {
 class SearchIndexRepository {
