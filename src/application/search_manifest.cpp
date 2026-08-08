@@ -1,4 +1,4 @@
-#include "lib/application/search_manifest.hpp"
+#include "application/search_manifest.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cmath>

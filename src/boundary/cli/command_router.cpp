@@ -28,17 +28,24 @@ void print_elapsed(std::ostream& output, std::chrono::microseconds elapsed) {
 
 int CommandRouter::run(int argc, char** argv) const {
     const std::string command = argc > 1 ? argv[1] : "scan";
-    if (command != "scan" && command != "search") {
+    const bool search_command = command == "search";
+    const bool index_size_command = command == "index-size";
+    if (command != "scan" && !search_command && !index_size_command) {
         std::cerr << "usage: crumb scan [DIRECTORY]\n"
-                     "       crumb search [DIRECTORY] QUERY [--limit N]\n";
+                     "       crumb search [DIRECTORY] QUERY [--limit N]\n"
+                     "       crumb index-size [DIRECTORY]\n";
         return 2;
     }
 
-    if (command == "search" && argc < 3) {
+    if (index_size_command && argc > 3) {
+        std::cerr << "usage: crumb index-size [DIRECTORY]\n";
+        return 2;
+    }
+
+    if (search_command && argc < 3) {
         std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N]\n";
         return 2;
     }
-    const bool search_command = command == "search";
     const bool explicit_directory = search_command && argc >= 4 && std::string_view(argv[3]) != "--limit";
     const int query_index = explicit_directory ? 3 : 2;
     std::size_t limit = std::numeric_limits<std::size_t>::max();
@@ -61,6 +68,17 @@ int CommandRouter::run(int argc, char** argv) const {
     const auto query = search_command ? argv[query_index] : "";
 
     const auto timer_started = std::chrono::steady_clock::now();
+
+    if (index_size_command) {
+        auto result = index_size_.execute(directory);
+        if (!result) {
+            std::cerr << "crumb: " << result.error() << '\n';
+            return 1;
+        }
+        std::cout << "directory=" << directory.value()
+                  << " index_size_bytes=" << *result << '\n';
+        return 0;
+    }
 
     if (command == "scan") {
         auto result = reconcile_.execute_recursive(directory);

@@ -92,6 +92,14 @@ std::expected<void, std::string> BinarySearchIndexRepository::save(const domain:
     return {};
 }
 
+std::expected<std::uintmax_t, std::string> BinarySearchIndexRepository::size(const domain::DirectoryPath& root) const {
+    const auto path = std::filesystem::path(root.value()) / ".crumb.index";
+    std::error_code error;
+    const auto result = std::filesystem::file_size(path, error);
+    if (error) return std::unexpected("cannot inspect " + path.string() + ": " + error.message());
+    return result;
+}
+
 std::expected<ports::SearchIndex, std::string> BinarySearchIndexRepository::load(const domain::DirectoryPath& root) const {
     const auto path = std::filesystem::path(root.value()) / ".crumb.index";
     std::ifstream in(path, std::ios::binary);

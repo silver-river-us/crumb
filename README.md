@@ -12,10 +12,10 @@ The implementation follows the format specification's dependency direction:
 boundary ──────▶ lib ◀────── infrastructure
 ```
 
-`crumb_lib` contains domain objects, ports, and application services;
-`crumb_boundary` contains CLI translation; and `crumb_infrastructure` contains
-the native filesystem, TOML mapper/repository, streamed hashing, clock, and
-ULID implementations.
+`crumb_lib` contains domain objects and ports; `crumb_application` contains
+use-case services; `crumb_boundary` contains CLI translation; and
+`crumb_infrastructure` contains the native filesystem, TOML mapper/repository,
+search index, streamed hashing, clock, and ULID implementations.
 
 ## Build
 
@@ -65,6 +65,15 @@ The index stores a global term keymap and document postings with term counts, so
 search resolves candidates from postings before reading manifest metadata. Run
 `scan` again after changing files. Symlinks, metadata directories, binary files,
 and oversized files are excluded from the index.
+
+To inspect the compressed index size without loading it, run:
+
+```sh
+./build/crumb index-size path/to/directory
+```
+
+When run without a directory, it checks the current directory and reports
+`index_size_bytes`.
 
 The writer emits UTF-8 TOML with quoted filename keys, required fields before
 optional fields, sorted file records, and a final newline. It writes

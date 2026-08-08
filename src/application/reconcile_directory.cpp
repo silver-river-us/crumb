@@ -1,4 +1,4 @@
-#include "lib/application/reconcile_directory.hpp"
+#include "application/reconcile_directory.hpp"
 #include "domain/directory_manifest.hpp"
 #include "domain/file_identity_matcher.hpp"
 
