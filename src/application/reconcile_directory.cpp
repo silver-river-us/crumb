@@ -2,31 +2,7 @@
 #include "domain/directory_manifest.hpp"
 #include "domain/file_identity_matcher.hpp"
 
-#include <cctype>
-#include <map>
-
 namespace crumb::application {
-namespace {
-void add_terms(std::map<std::string, std::uint32_t>& terms, std::string_view text) {
-    std::string current;
-    const auto add = [&terms](std::string word) {
-        if (word.size() >= 3) ++terms[word];
-    };
-    for (const unsigned char character : text) {
-        if (std::isalnum(character) || character == '_') current.push_back(static_cast<char>(std::tolower(character)));
-        else if (!current.empty()) { add(std::move(current)); current.clear(); }
-    }
-    if (!current.empty()) add(std::move(current));
-}
-void add_entry_terms(std::map<std::string, std::uint32_t>& terms, const domain::FileEntry& entry) {
-    add_terms(terms, entry.name.value());
-    add_terms(terms, entry.metadata.type);
-    if (entry.metadata.title) add_terms(terms, *entry.metadata.title);
-    if (entry.metadata.author) add_terms(terms, *entry.metadata.author);
-    for (const auto& tag : entry.metadata.tags) add_terms(terms, tag);
-    for (const auto& [key, value] : entry.metadata.extension_fields) add_terms(terms, key + " " + value);
-}
-}
 std::expected<ReconcileResult, std::string> ReconcileDirectory::execute(const domain::DirectoryPath& directory) {
     auto loaded = manifests_.load(directory);
     if (!loaded) return std::unexpected(loaded.error());
@@ -97,31 +73,6 @@ std::expected<ReconcileResult, std::string> ReconcileDirectory::execute_recursiv
         total.added += result->added;
         total.updated += result->updated;
         total.removed += result->removed;
-    }
-    if (index_) {
-        std::map<std::string, std::map<std::uint32_t, std::uint32_t>> inverted;
-
-        ports::SearchIndex persisted;
-        for (const auto& current : directories.value()) {
-            auto loaded = manifests_.load(current);
-            if (!loaded) return std::unexpected(loaded.error());
-            if (!loaded.value()) continue;
-            for (const auto& entry : loaded.value()->files()) {
-                const auto document_id = static_cast<std::uint32_t>(persisted.documents.size());
-                persisted.documents.push_back({current, entry.name});
-
-                std::map<std::string, std::uint32_t> terms;
-                add_entry_terms(terms, entry);
-                for (const auto& [term, count] : terms) inverted[term][document_id] = count;
-            }
-        }
-        for (auto& [term, postings] : inverted) {
-            ports::SearchTerm item{std::move(term), {}};
-            for (const auto& [document_id, count] : postings) item.postings.push_back({document_id, count});
-            persisted.terms.push_back(std::move(item));
-        }
-        auto saved = index_->save(directory, persisted);
-        if (!saved) return std::unexpected(saved.error());
     }
     return total;
 }

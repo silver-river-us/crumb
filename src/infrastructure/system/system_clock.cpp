@@ -11,7 +11,7 @@ std::string SystemClock::now_utc() {
     gmtime_r(&now, &utc);
 #endif
     char buffer[32]{};
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", &utc);
+    std::strftime(buffer, sizeof(buffer), "%Y_%m_%dT%H:%M:%SZ", &utc);
     return buffer;
 }
 }

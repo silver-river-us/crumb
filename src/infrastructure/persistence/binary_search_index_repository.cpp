@@ -20,7 +20,7 @@ bool read_string(std::istream& in, std::string& value) {
     value.resize(size);
     return static_cast<bool>(in.read(value.data(), static_cast<std::streamsize>(size)));
 }
-void serialize(std::ostream& out, const ports::SearchIndex& index) {
+void serialize(std::ostream& out, const domain::SearchIndex& index) {
     write_number(out, static_cast<std::uint32_t>(index.documents.size()));
     for (const auto& document : index.documents) {
         write_string(out, document.directory.value());
@@ -36,8 +36,8 @@ void serialize(std::ostream& out, const ports::SearchIndex& index) {
         }
     }
 }
-std::expected<ports::SearchIndex, std::string> deserialize(std::istream& in) {
-    ports::SearchIndex index;
+std::expected<domain::SearchIndex, std::string> deserialize(std::istream& in) {
+    domain::SearchIndex index;
     std::uint32_t document_count{}, term_count{};
     if (!read_number(in, document_count) || document_count > 100'000'000) return std::unexpected("invalid document count");
     index.documents.reserve(document_count);
@@ -50,11 +50,11 @@ std::expected<ports::SearchIndex, std::string> deserialize(std::istream& in) {
     if (!read_number(in, term_count) || term_count > 10'000'000) return std::unexpected("invalid term count");
     index.terms.reserve(term_count);
     for (std::uint32_t i = 0; i < term_count; ++i) {
-        ports::SearchTerm term; std::uint32_t posting_count{};
+        domain::SearchTerm term; std::uint32_t posting_count{};
         if (!read_string(in, term.term) || !read_number(in, posting_count) || posting_count > 100'000'000) return std::unexpected("truncated search index");
         term.postings.reserve(posting_count);
         for (std::uint32_t j = 0; j < posting_count; ++j) {
-            ports::SearchPosting posting;
+            domain::SearchPosting posting;
             if (!read_number(in, posting.document_id) || !read_number(in, posting.count) || posting.document_id >= document_count) return std::unexpected("invalid search posting");
             term.postings.push_back(posting);
         }
@@ -64,7 +64,7 @@ std::expected<ports::SearchIndex, std::string> deserialize(std::istream& in) {
 }
 }
 
-std::expected<void, std::string> BinarySearchIndexRepository::save(const domain::DirectoryPath& root, const ports::SearchIndex& index) {
+std::expected<void, std::string> BinarySearchIndexRepository::save(const domain::DirectoryPath& root, const domain::SearchIndex& index) {
     const auto path = std::filesystem::path(root.value()) / ".crumb.index";
     const auto temporary = path.string() + ".tmp";
     try {
@@ -100,7 +100,7 @@ std::expected<std::uintmax_t, std::string> BinarySearchIndexRepository::size(con
     return result;
 }
 
-std::expected<ports::SearchIndex, std::string> BinarySearchIndexRepository::load(const domain::DirectoryPath& root) const {
+std::expected<domain::SearchIndex, std::string> BinarySearchIndexRepository::load(const domain::DirectoryPath& root) const {
     const auto path = std::filesystem::path(root.value()) / ".crumb.index";
     std::ifstream in(path, std::ios::binary);
     if (!in) return std::unexpected("cannot read " + path.string());

@@ -1,8 +1,9 @@
 #!/bin/sh
-set -eu
-
-ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-cmake --preset default -S "$ROOT_DIR"
-cmake --build --preset default
-ctest --preset default
-"$ROOT_DIR/build/crumb"
+root_dir=${0%/*}/..
+cd "$root_dir"
+mkdir build 2>/dev/null
+cd build
+cmake ..
+make
+ctest
+./crumb

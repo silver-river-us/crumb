@@ -22,7 +22,7 @@ std::string mime(const std::string& name) {
     if (ext == "txt") return "text/plain";
     if (ext == "json") return "application/json";
     if (ext == "toml") return "application/toml";
-    return "application/octet-stream";
+    return "application/octet_stream";
 }
 bool is_stopword(std::string_view word) {
     constexpr std::array stopwords{

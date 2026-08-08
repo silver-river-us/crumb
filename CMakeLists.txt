@@ -20,6 +20,7 @@ add_library(crumb_application
 
     src/application/move_file.cpp
     src/application/reconcile_directory.cpp
+    src/application/rebuild_search_index.cpp
 
     src/application/search_manifest.cpp
 )
@@ -44,11 +45,6 @@ target_link_libraries(crumb_infrastructure PRIVATE crumb_lib ZLIB::ZLIB)
 
 add_executable(crumb src/main.cpp)
 target_link_libraries(crumb PRIVATE crumb_boundary crumb_infrastructure)
-
-target_compile_options(crumb PRIVATE
-    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall;-Wextra;-Wpedantic>
-    $<$<CXX_COMPILER_ID:MSVC>:/W4>
-)
 
 include(CTest)
 if(BUILD_TESTING)

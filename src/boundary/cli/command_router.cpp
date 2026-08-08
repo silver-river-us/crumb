@@ -29,36 +29,36 @@ void print_elapsed(std::ostream& output, std::chrono::microseconds elapsed) {
 int CommandRouter::run(int argc, char** argv) const {
     const std::string command = argc > 1 ? argv[1] : "scan";
     const bool search_command = command == "search";
-    const bool index_size_command = command == "index-size";
+    const bool index_size_command = command == "index_size";
     if (command != "scan" && !search_command && !index_size_command) {
         std::cerr << "usage: crumb scan [DIRECTORY]\n"
-                     "       crumb search [DIRECTORY] QUERY [--limit N]\n"
-                     "       crumb index-size [DIRECTORY]\n";
+                     "       crumb search [DIRECTORY] QUERY [limit N]\n"
+                     "       crumb index_size [DIRECTORY]\n";
         return 2;
     }
 
     if (index_size_command && argc > 3) {
-        std::cerr << "usage: crumb index-size [DIRECTORY]\n";
+        std::cerr << "usage: crumb index_size [DIRECTORY]\n";
         return 2;
     }
 
     if (search_command && argc < 3) {
-        std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N]\n";
+        std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N]\n";
         return 2;
     }
-    const bool explicit_directory = search_command && argc >= 4 && std::string_view(argv[3]) != "--limit";
+    const bool explicit_directory = search_command && argc >= 4 && std::string_view(argv[3]) != "limit";
     const int query_index = explicit_directory ? 3 : 2;
     std::size_t limit = std::numeric_limits<std::size_t>::max();
     if (search_command) {
         for (int index = query_index + 1; index < argc; ++index) {
-            if (std::string_view(argv[index]) != "--limit" || index + 1 >= argc) {
-                std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N]\n";
+            if (std::string_view(argv[index]) != "limit" || index + 1 >= argc) {
+                std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N]\n";
                 return 2;
             }
             const auto value = std::string_view(argv[++index]);
             const auto parsed = std::from_chars(value.data(), value.data() + value.size(), limit);
             if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size()) {
-                std::cerr << "crumb: --limit must be a non-negative integer\n";
+                std::cerr << "crumb: limit must be a nonnegative integer\n";
                 return 2;
             }
         }
@@ -84,6 +84,11 @@ int CommandRouter::run(int argc, char** argv) const {
         auto result = reconcile_.execute_recursive(directory);
         if (!result) {
             std::cerr << "crumb: " << result.error() << '\n';
+            return 1;
+        }
+        auto rebuilt = rebuild_index_.execute(directory);
+        if (!rebuilt) {
+            std::cerr << "crumb: " << rebuilt.error() << '\n';
             return 1;
         }
         const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(

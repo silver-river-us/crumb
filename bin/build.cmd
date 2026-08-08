@@ -1,6 +1,9 @@
 @echo off
 setlocal
 set "ROOT_DIR=%~dp0.."
-cmake --preset default -S "%ROOT_DIR%"
+cd /d "%ROOT_DIR%"
+if not exist build mkdir build
+cd build
+cmake ..
 if errorlevel 1 exit /b %errorlevel%
-cmake --build --preset default
+msbuild crumb.sln

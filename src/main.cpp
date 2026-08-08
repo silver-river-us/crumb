@@ -3,5 +3,6 @@
 
 int main(int argc, char** argv) {
     crumb::infrastructure::ApplicationComponents components;
-    return crumb::boundary::CommandRouter(components.reconcile, components.search, components.index_size).run(argc, argv);
+    return crumb::boundary::CommandRouter(
+        components.reconcile, components.rebuild_index, components.search, components.index_size).run(argc, argv);
 }

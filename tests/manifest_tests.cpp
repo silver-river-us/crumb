@@ -7,7 +7,7 @@
 int main() {
     using namespace crumb::domain;
     auto manifest = DirectoryManifest::create(
-        DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"), DirectoryPath::create("."), "2026-08-05T18:30:00Z", "crumb/0.1.0");
+        DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"), DirectoryPath::create("."), "2026_08_05T18:30:00Z", "crumb/0.1.0");
     FileMetadata metadata; metadata.type = "text/markdown"; metadata.size = 42; metadata.modified_ns = 7; metadata.title = "Technical Proposal";
     manifest.add({FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"), FileName::create("zeta file.md"), metadata, Fingerprint::create("xxh3:73abc14b02e9")});
     manifest.add({FileId::create("01K1AC4K3N7JZM5F21V6PH8QRT"), FileName::create("annual.report.pdf"), metadata, Fingerprint::create("xxh3:884fa2c0f7d3")});

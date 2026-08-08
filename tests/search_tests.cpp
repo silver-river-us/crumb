@@ -1,4 +1,5 @@
 #include "application/search_manifest.hpp"
+#include "application/rebuild_search_index.hpp"
 
 #include <cassert>
 #include <map>
@@ -53,6 +54,28 @@ public:
         return found->second;
     }
 };
+
+class InMemorySearchIndexRepository final : public crumb::ports::SearchIndexRepository {
+public:
+    std::optional<crumb::domain::SearchIndex> index;
+
+    std::expected<void, std::string> save(
+        const crumb::domain::DirectoryPath&, const crumb::domain::SearchIndex& value) override {
+        index = value;
+        return {};
+    }
+
+    std::expected<crumb::domain::SearchIndex, std::string> load(
+        const crumb::domain::DirectoryPath&) const override {
+        if (!index) return std::unexpected("index is not available");
+        return *index;
+    }
+
+    std::expected<std::uintmax_t, std::string> size(
+        const crumb::domain::DirectoryPath&) const override {
+        return 0;
+    }
+};
 }
 
 int main() {
@@ -91,6 +114,14 @@ int main() {
     repository.manifest = std::move(manifest);
     filesystem.contents["proposal.md"] = "This document describes domain driven design.";
     filesystem.contents["annual.report.pdf"] = "Annual financial report.";
+
+    InMemorySearchIndexRepository index;
+    crumb::application::RebuildSearchIndex rebuild_index(repository, filesystem, index);
+    const auto rebuilt = rebuild_index.execute(directory);
+    assert(rebuilt.has_value());
+    assert(index.index.has_value());
+    assert(index.index->documents.size() == 2);
+    assert(index.index->terms.size() >= 5);
 
     auto title_match = search.execute(directory, "technical proposal");
     assert(title_match.has_value());

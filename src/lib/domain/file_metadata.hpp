@@ -9,7 +9,7 @@
 namespace crumb::domain {
 
 struct FileMetadata {
-    std::string type{"application/octet-stream"};
+    std::string type{"application/octet_stream"};
     std::uintmax_t size{};
     std::int64_t modified_ns{};
     std::optional<std::int64_t> created_ns;
