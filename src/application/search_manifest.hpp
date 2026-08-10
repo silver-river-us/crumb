@@ -5,6 +5,7 @@
 #include "lib/ports/manifest_repository.hpp"
 #include "lib/ports/search_index_repository.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <expected>
 #include <limits>
 #include <optional>
@@ -22,9 +23,17 @@ struct SearchMatch {
     std::optional<std::string> author;
 };
 
+struct SearchTraceSpan {
+    std::string name;
+    std::uint64_t offset_us{};
+    std::uint64_t duration_us{};
+    std::string detail;
+};
+
 struct SearchResult {
     std::size_t inspected{};
     std::vector<SearchMatch> matches;
+    std::vector<SearchTraceSpan> trace;
 };
 
 class SearchManifest {

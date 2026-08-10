@@ -13,6 +13,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -123,7 +124,7 @@ public:
         const auto document_id = static_cast<std::uint32_t>(index_.documents.size());
         index_.documents.push_back({std::move(directory), entry.name});
 
-        std::map<std::string, std::uint32_t> terms;
+        std::unordered_map<std::string, std::uint32_t> terms;
         add_terms(terms, entry.name.value());
         add_terms(terms, entry.metadata.type);
         if (entry.metadata.title) add_terms(terms, *entry.metadata.title);
@@ -137,13 +138,15 @@ public:
         for (auto& [term, postings] : postings_) {
             SearchTerm item{std::move(term), {}};
             for (const auto& [document_id, count] : postings) item.postings.push_back({document_id, count});
+            std::ranges::sort(item.postings, {}, &SearchPosting::document_id);
             index_.terms.push_back(std::move(item));
         }
+        std::ranges::sort(index_.terms, {}, &SearchTerm::term);
         return std::move(index_);
     }
 
 private:
-    static void add_terms(std::map<std::string, std::uint32_t>& terms, std::string_view text) {
+    static void add_terms(std::unordered_map<std::string, std::uint32_t>& terms, std::string_view text) {
         std::string current;
         const auto add = [&terms](std::string word) {
             if (word.size() >= 3) ++terms[word];
@@ -161,7 +164,7 @@ private:
     }
 
     SearchIndex index_;
-    std::map<std::string, std::map<std::uint32_t, std::uint32_t>> postings_;
+    std::unordered_map<std::string, std::unordered_map<std::uint32_t, std::uint32_t>> postings_;
 };
 
 } // namespace crumb::domain

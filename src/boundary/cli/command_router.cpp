@@ -1,4 +1,5 @@
 #include "boundary/cli/command_router.hpp"
+#include "boundary/cli/search_tap.hpp"
 #include "domain/value_objects/value_objects.hpp"
 
 #include <charconv>
@@ -8,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <string_view>
+#include <vector>
 
 namespace crumb::boundary {
 namespace {
@@ -32,7 +34,7 @@ int CommandRouter::run(int argc, char** argv) const {
     const bool index_size_command = command == "index_size";
     if (command != "scan" && !search_command && !index_size_command) {
         std::cerr << "usage: crumb scan [DIRECTORY]\n"
-                     "       crumb search [DIRECTORY] QUERY [limit N]\n"
+                     "       crumb search [DIRECTORY] QUERY [limit N] [--tap [html]]\n"
                      "       crumb index_size [DIRECTORY]\n";
         return 2;
     }
@@ -43,29 +45,66 @@ int CommandRouter::run(int argc, char** argv) const {
     }
 
     if (search_command && argc < 3) {
-        std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N]\n";
+        std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N] [--tap [html]]\n";
         return 2;
     }
-    const bool explicit_directory = search_command && argc >= 4 && std::string_view(argv[3]) != "limit";
-    const int query_index = explicit_directory ? 3 : 2;
+
     std::size_t limit = std::numeric_limits<std::size_t>::max();
+    bool tap_requested = false;
+    TapFormat tap_format = TapFormat::text;
+    std::vector<std::string_view> search_positionals;
     if (search_command) {
-        for (int index = query_index + 1; index < argc; ++index) {
-            if (std::string_view(argv[index]) != "limit" || index + 1 >= argc) {
-                std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N]\n";
+        for (int index = 2; index < argc; ++index) {
+            const auto argument = std::string_view(argv[index]);
+            if (argument == "--tap") {
+                tap_requested = true;
+                if (index + 1 < argc && std::string_view(argv[index + 1]) == "html") {
+                    tap_format = TapFormat::html;
+                    ++index;
+                }
+                continue;
+            }
+            if (argument.starts_with("--tap=")) {
+                const auto format = argument.substr(6);
+                if (format == "html") {
+                    tap_requested = true;
+                    tap_format = TapFormat::html;
+                    continue;
+                }
+                if (format == "text") {
+                    tap_requested = true;
+                    tap_format = TapFormat::text;
+                    continue;
+                }
+                std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N] [--tap [html]]\n";
                 return 2;
             }
-            const auto value = std::string_view(argv[++index]);
-            const auto parsed = std::from_chars(value.data(), value.data() + value.size(), limit);
-            if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size()) {
-                std::cerr << "crumb: limit must be a nonnegative integer\n";
-                return 2;
+            if (argument == "limit") {
+                if (index + 1 >= argc) {
+                    std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N] [--tap [html]]\n";
+                    return 2;
+                }
+                const auto value = std::string_view(argv[++index]);
+                const auto parsed = std::from_chars(value.data(), value.data() + value.size(), limit);
+                if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size()) {
+                    std::cerr << "crumb: limit must be a nonnegative integer\n";
+                    return 2;
+                }
+                continue;
             }
+            search_positionals.push_back(argument);
+        }
+        if (search_positionals.size() < 1 || search_positionals.size() > 2) {
+            std::cerr << "usage: crumb search [DIRECTORY] QUERY [limit N] [--tap [html]]\n";
+            return 2;
         }
     }
-    const auto directory = domain::DirectoryPath::create(
-        search_command ? (explicit_directory ? argv[2] : ".") : (argc > 2 ? argv[2] : "."));
-    const auto query = search_command ? argv[query_index] : "";
+    const bool explicit_directory = search_command && search_positionals.size() == 2;
+    const std::string directory_value = search_command
+                                            ? (explicit_directory ? std::string(search_positionals[0]) : ".")
+                                            : (argc > 2 ? argv[2] : ".");
+    const auto directory = domain::DirectoryPath::create(directory_value);
+    const auto query = search_command ? search_positionals.back() : "";
 
     const auto timer_started = std::chrono::steady_clock::now();
 
@@ -108,6 +147,10 @@ int CommandRouter::run(int argc, char** argv) const {
         std::cerr << "crumb: " << result.error() << '\n';
         return 1;
     }
+    if (tap_requested && tap_format == TapFormat::html) {
+        std::cout << render_search_tap(query, directory, *result, TapFormat::html);
+        return 0;
+    }
     const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::steady_clock::now() - timer_started);
     std::cout << std::fixed << std::setprecision(4);
@@ -124,6 +167,9 @@ int CommandRouter::run(int argc, char** argv) const {
               << " matches=" << result->matches.size();
     print_elapsed(std::cout, elapsed);
     std::cout << '\n';
+    if (tap_requested) {
+        std::cout << '\n' << render_search_tap(query, directory, *result, TapFormat::text);
+    }
     return 0;
 }
 }

@@ -7,6 +7,7 @@ project(crumb
 )
 
 find_package(ZLIB REQUIRED)
+find_package(Threads REQUIRED)
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 23)
@@ -24,7 +25,10 @@ add_library(crumb_application
 target_include_directories(crumb_application PUBLIC src src/lib)
 target_link_libraries(crumb_application PUBLIC crumb_lib)
 
-add_library(crumb_boundary src/boundary/cli/command_router.cpp)
+add_library(crumb_boundary
+    src/boundary/cli/command_router.cpp
+    src/boundary/cli/search_tap.cpp
+)
 target_include_directories(crumb_boundary PUBLIC src src/lib)
 target_link_libraries(crumb_boundary PRIVATE crumb_application)
 
@@ -38,7 +42,7 @@ add_library(crumb_infrastructure
     src/infrastructure/system/ulid_generator.cpp
 )
 target_include_directories(crumb_infrastructure PUBLIC src src/lib)
-target_link_libraries(crumb_infrastructure PRIVATE crumb_lib ZLIB::ZLIB)
+target_link_libraries(crumb_infrastructure PRIVATE crumb_lib ZLIB::ZLIB Threads::Threads)
 
 add_executable(crumb src/main.cpp)
 target_link_libraries(crumb PRIVATE crumb_boundary crumb_infrastructure)
@@ -52,4 +56,7 @@ if(BUILD_TESTING)
     add_executable(crumb_search_tests tests/search_tests.cpp)
     target_link_libraries(crumb_search_tests PRIVATE crumb_application)
     add_test(NAME crumb_search_tests COMMAND crumb_search_tests)
+    add_executable(crumb_search_tap_tests tests/search_tap_tests.cpp)
+    target_link_libraries(crumb_search_tap_tests PRIVATE crumb_boundary)
+    add_test(NAME crumb_search_tap_tests COMMAND crumb_search_tap_tests)
 endif()

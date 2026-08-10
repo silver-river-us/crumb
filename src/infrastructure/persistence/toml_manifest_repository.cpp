@@ -1,17 +1,57 @@
 #include "infrastructure/persistence/toml_manifest_repository.hpp"
+#include <algorithm>
+#include <atomic>
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 namespace crumb::infrastructure {
 std::expected<std::optional<domain::DirectoryManifest>, std::string> TomlManifestRepository::load(const domain::DirectoryPath& directory) {
     const auto path = std::filesystem::path(directory.value()) / ".crumb";
-    if (!std::filesystem::exists(path)) return std::nullopt;
     std::ifstream input(path, std::ios::binary);
-    if (!input) return std::unexpected("cannot read " + path.string());
+    if (!input) {
+        std::error_code error;
+        if (!std::filesystem::exists(path, error)) return std::nullopt;
+        return std::unexpected("cannot read " + path.string());
+    }
     const std::string text((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
     auto manifest = mapper_.fromToml(text, directory);
     if (!manifest) return std::unexpected(manifest.error());
     return std::optional<domain::DirectoryManifest>(std::move(manifest.value()));
+}
+std::expected<ports::LoadedManifestBatch, std::string> TomlManifestRepository::load_many(
+    const std::vector<domain::DirectoryPath>& directories) {
+    using LoadResult = std::expected<std::optional<domain::DirectoryManifest>, std::string>;
+    std::vector<std::optional<LoadResult>> loaded(directories.size());
+    std::atomic<std::size_t> next{};
+    const auto hardware_threads = std::thread::hardware_concurrency();
+    const auto worker_count = std::min<std::size_t>(
+        directories.size(), std::max<std::size_t>(1, hardware_threads));
+    std::vector<std::thread> workers;
+    workers.reserve(worker_count);
+    for (std::size_t worker = 0; worker < worker_count; ++worker) {
+        workers.emplace_back([&] {
+            while (true) {
+                const auto index = next.fetch_add(1, std::memory_order_relaxed);
+                if (index >= directories.size()) return;
+                try {
+                    loaded[index] = load(directories[index]);
+                } catch (const std::exception& error) {
+                    loaded[index] = std::unexpected(error.what());
+                }
+            }
+        });
+    }
+    for (auto& worker : workers) worker.join();
+
+    ports::LoadedManifestBatch result;
+    result.reserve(directories.size());
+    for (std::size_t index = 0; index < directories.size(); ++index) {
+        if (!loaded[index]) return std::unexpected("manifest worker did not return a result");
+        if (!loaded[index]->has_value()) return std::unexpected(loaded[index]->error());
+        result.emplace_back(directories[index], std::move(loaded[index]->value()));
+    }
+    return result;
 }
 std::expected<void, std::string> TomlManifestRepository::save(const domain::DirectoryManifest& manifest) {
     const auto directory = std::filesystem::path(manifest.path().value());

@@ -118,11 +118,21 @@ int main() {
     assert(index.index->documents.size() == 2);
     assert(index.index->terms.size() >= 5);
 
+    crumb::application::SearchManifest indexed_search(repository, filesystem, &index);
+    auto indexed_match = indexed_search.execute(directory, "technical proposal");
+    assert(indexed_match.has_value());
+    assert(indexed_match->trace.size() == 3);
+    assert(indexed_match->trace[1].name == "index_load");
+    assert(indexed_match->trace[1].detail == "persisted index");
+
     auto title_match = search.execute(directory, "technical proposal");
     assert(title_match.has_value());
     assert(title_match->inspected == 2);
     assert(title_match->matches.size() == 1);
     assert(title_match->matches.front().name.value() == "proposal.md");
+    assert(title_match->trace.size() == 5);
+    assert(title_match->trace.front().name == "query_parse");
+    assert(title_match->trace.back().name == "rank_results");
 
     auto fuzzy_match = search.execute(directory, "proposl");
     assert(fuzzy_match.has_value());

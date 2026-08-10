@@ -5,6 +5,8 @@ namespace crumb::infrastructure {
 class TomlManifestRepository final : public ports::ManifestRepository {
 public:
     std::expected<std::optional<domain::DirectoryManifest>, std::string> load(const domain::DirectoryPath&) override;
+    std::expected<ports::LoadedManifestBatch, std::string> load_many(
+        const std::vector<domain::DirectoryPath>&) override;
     std::expected<void, std::string> save(const domain::DirectoryManifest&) override;
 private: TomlManifestMapper mapper_;
 };

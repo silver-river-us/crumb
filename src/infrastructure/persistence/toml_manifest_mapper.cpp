@@ -1,17 +1,18 @@
 #include "infrastructure/persistence/toml_manifest_mapper.hpp"
 #include <charconv>
 #include <sstream>
+#include <unordered_map>
 
 namespace crumb::infrastructure {
 namespace {
-std::string trim(std::string value) {
+std::string_view trim(std::string_view value) {
     const auto first = value.find_first_not_of(" \t\r");
     if (first == std::string::npos) return {};
     const auto last = value.find_last_not_of(" \t\r");
     return value.substr(first, last - first + 1);
 }
-std::string unquote(std::string value) {
-    value = trim(std::move(value));
+std::string unquote(std::string_view value) {
+    value = trim(value);
     if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
         std::string result;
         for (std::size_t i = 1; i + 1 < value.size(); ++i) {
@@ -22,18 +23,17 @@ std::string unquote(std::string value) {
         }
         return result;
     }
-    return value;
+    return std::string(value);
 }
 std::string quote(std::string_view value) {
     std::string result = "\"";
     for (const char c : value) { if (c == '\\' || c == '"') result += '\\'; result += c == '\n' ? "\\n" : std::string(1, c); }
     result += '"'; return result;
 }
-std::string key_value(std::string line) { const auto pos = line.find('='); return pos == std::string::npos ? "" : trim(line.substr(pos + 1)); }
-std::optional<std::string> string_field(const std::map<std::string, std::string>& fields, std::string_view key) {
+std::optional<std::string> string_field(const std::unordered_map<std::string, std::string>& fields, std::string_view key) {
     if (const auto it = fields.find(std::string(key)); it != fields.end()) return unquote(it->second); return std::nullopt;
 }
-std::optional<std::uintmax_t> integer_field(const std::map<std::string, std::string>& fields, std::string_view key) {
+std::optional<std::uintmax_t> integer_field(const std::unordered_map<std::string, std::string>& fields, std::string_view key) {
     if (const auto value = string_field(fields, key)) { std::uintmax_t n{}; auto [p, e] = std::from_chars(value->data(), value->data() + value->size(), n); if (e == std::errc{}) return n; } return std::nullopt;
 }
 }
@@ -41,22 +41,27 @@ std::expected<domain::DirectoryManifest, std::string> TomlManifestMapper::fromTo
     return fromToml(input, domain::DirectoryPath::create("."));
 }
 std::expected<domain::DirectoryManifest, std::string> TomlManifestMapper::fromToml(std::string_view input, const domain::DirectoryPath& path) const {
-    std::istringstream lines{std::string(input)};
-    std::string line, section, directory_id, generated_at, generator;
+    std::string section, directory_id, generated_at, generator;
     int version = 0;
-    std::map<std::string, std::string> fields;
-    std::map<std::string, std::map<std::string, std::string>> records;
+    std::unordered_map<std::string, std::string> fields;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> records;
     auto flush = [&] {
         if (!section.empty() && section.starts_with("files.")) records[unquote(section.substr(6))] = fields;
         fields.clear();
     };
-    while (std::getline(lines, line)) {
-        line = trim(std::move(line)); if (line.empty() || line.starts_with('#')) continue;
+    std::size_t line_start = 0;
+    while (line_start < input.size()) {
+        const auto line_end = input.find('\n', line_start);
+        const auto line = trim(input.substr(line_start, line_end == std::string_view::npos
+                                                        ? std::string_view::npos
+                                                        : line_end - line_start));
+        line_start = line_end == std::string_view::npos ? input.size() : line_end + 1;
+        if (line.empty() || line.starts_with('#')) continue;
         if (line.front() == '[' && line.back() == ']') { flush(); section = line.substr(1, line.size() - 2); continue; }
         const auto pos = line.find('='); if (pos == std::string::npos) continue;
         const auto key = trim(line.substr(0, pos)); const auto value = trim(line.substr(pos + 1));
         if (section.empty()) { if (key == "version") { auto parsed = unquote(value); std::from_chars(parsed.data(), parsed.data() + parsed.size(), version); } else if (key == "directory_id") directory_id = unquote(value); else if (key == "generated_at") generated_at = unquote(value); else if (key == "generator") generator = unquote(value); }
-        else fields[key] = value;
+        else fields[std::string(key)] = value;
     }
     flush();
     if (version != 1) return std::unexpected("unsupported manifest major version");

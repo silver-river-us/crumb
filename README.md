@@ -31,6 +31,18 @@ build/crumb search path/to/directory "technical proposal" limit 10
 
 Search uses case insensitive fuzzy matching and rank weighting over file names, metadata, tags, extension fields, and persisted index terms.
 
+Use `--tap` to show a query waterfall in the terminal:
+
+```sh
+build/crumb search "technical proposal" --tap
+```
+
+Use `--tap html` (or `--tap=html`) to emit a self contained HTML report, which can be redirected to a file:
+
+```sh
+build/crumb search "technical proposal" --tap html > search_tap.html
+```
+
 ## Index size
 
 ```sh
