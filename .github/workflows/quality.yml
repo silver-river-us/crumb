@@ -66,6 +66,10 @@ jobs:
         run: cmake --build --preset asan-ubsan
 
       - name: Run AddressSanitizer and UndefinedBehaviorSanitizer tests
+        # Ubuntu's shared libc++abi has an alloc/dealloc mismatch in exception
+        # cleanup that is unrelated to the instrumented application code.
+        env:
+          ASAN_OPTIONS: alloc_dealloc_mismatch=0
         run: ctest --preset asan-ubsan
 
   coverage:
