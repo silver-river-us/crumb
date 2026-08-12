@@ -10,6 +10,7 @@
 #include <expected>
 #include <map>
 
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -46,6 +47,9 @@ public:
     [[nodiscard]] const std::vector<std::string>& words() const noexcept { return words_; }
 
     [[nodiscard]] static bool fuzzy_contains(const std::string& value, const std::string& word) {
+        const auto documents_alias =
+            value == "docs" && (word == "document" || word == "documents");
+        if (documents_alias) return true;
         const auto prefix_length = std::max<std::size_t>(4, word.size() - 2);
         return value.find(word) != std::string::npos ||
                value.find(word.substr(0, prefix_length)) != std::string::npos;
@@ -60,6 +64,10 @@ private:
 struct SearchDocument {
     DirectoryPath directory;
     FileName name;
+    std::string file_id;
+    std::optional<std::string> external_url;
+    std::optional<std::int64_t> created_ns;
+    std::optional<std::int64_t> modified_ns;
 };
 
 struct SearchPosting {
@@ -83,6 +91,7 @@ struct SearchIndex {
 
     [[nodiscard]] std::vector<SearchHit> search(const SearchQuery& query) const {
         std::map<std::uint32_t, double> scores;
+        std::map<std::uint32_t, std::size_t> matched_words;
         const auto total = static_cast<double>(documents.size());
 
         for (const auto& word : query.words()) {
@@ -92,6 +101,12 @@ struct SearchIndex {
             });
             if (exact != terms.end() && exact->term == word) {
                 matching_terms.push_back(&*exact);
+                if (word == "document" || word == "documents") {
+                    const auto docs = std::ranges::lower_bound(terms, std::string_view("docs"), {}, [](const auto& term) {
+                        return term.term;
+                    });
+                    if (docs != terms.end() && docs->term == "docs") matching_terms.push_back(&*docs);
+                }
             } else {
                 for (const auto& term : terms) {
                     if (SearchQuery::fuzzy_contains(term.term, word)) matching_terms.push_back(&term);
@@ -108,11 +123,15 @@ struct SearchIndex {
             for (const auto* term : matching_terms) {
                 for (const auto& posting : term->postings) scores[posting.document_id] += weight * posting.count;
             }
+            for (const auto document_id : matched) ++matched_words[document_id];
         }
 
         std::vector<SearchHit> hits;
         for (const auto& [document_id, score] : scores) {
-            if (score > 0.0 && document_id < documents.size()) hits.push_back({document_id, score});
+            if (score > 0.0 && document_id < documents.size() &&
+                matched_words[document_id] == query.words().size()) {
+                hits.push_back({document_id, score});
+            }
         }
         return hits;
     }
@@ -122,9 +141,12 @@ class SearchIndexBuilder {
 public:
     void add(DirectoryPath directory, const FileEntry& entry) {
         const auto document_id = static_cast<std::uint32_t>(index_.documents.size());
-        index_.documents.push_back({std::move(directory), entry.name});
+        const auto directory_value = directory.value();
+        index_.documents.push_back({std::move(directory), entry.name, file_id_hash(entry.id), entry.metadata.external_url,
+                                    entry.metadata.created_ns, entry.metadata.modified_ns});
 
         std::unordered_map<std::string, std::uint32_t> terms;
+        add_terms(terms, directory_value);
         add_terms(terms, entry.name.value());
         add_terms(terms, entry.metadata.type);
         if (entry.metadata.title) add_terms(terms, *entry.metadata.title);

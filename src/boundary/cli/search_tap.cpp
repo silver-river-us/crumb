@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <ctime>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
@@ -123,12 +124,43 @@ std::string render_html(std::string_view query, const domain::DirectoryPath& dir
                << format_duration(span.duration_us) << "</div><div>@ "
                << format_duration(span.offset_us) << "</div></div>";
     }
-    output << "</section><table><thead><tr><th>Result</th><th>Score</th><th>Type</th></tr></thead><tbody>";
+    output << "</section><table><thead><tr><th>ID</th><th>Result</th><th>Score</th><th>Type</th><th>Created</th><th>Edited</th><th>Link</th></tr></thead><tbody>";
     for (const auto& match : result.matches) {
         const auto path = (std::filesystem::path(match.directory.value()) / match.name.value()).string();
-        output << "<tr><td><code>" << html_escape(path) << "</code></td><td>"
+        output << "<tr><td><code>" << html_escape(match.file_id.value_or("-"))
+               << "</code></td><td><code>" << html_escape(path) << "</code></td><td>"
                << std::fixed << std::setprecision(4) << match.score << "</td><td>"
-               << html_escape(match.type) << "</td></tr>";
+               << html_escape(match.type) << "</td><td>";
+        if (match.created_ns) {
+            const auto seconds = static_cast<std::time_t>(*match.created_ns / 1'000'000'000);
+            const auto* local = std::localtime(&seconds);
+            char formatted[11]{};
+            if (local && std::strftime(formatted, sizeof formatted, "%Y-%m-%d", local) != 0) {
+                output << formatted;
+            } else {
+                output << "-";
+            }
+        } else {
+            output << "-";
+        }
+        output << "</td><td>";
+        if (match.modified_ns) {
+            const auto seconds = static_cast<std::time_t>(*match.modified_ns / 1'000'000'000);
+            const auto* local = std::localtime(&seconds);
+            char formatted[11]{};
+            if (local && std::strftime(formatted, sizeof formatted, "%Y-%m-%d", local) != 0) {
+                output << formatted;
+            } else {
+                output << "-";
+            }
+        } else {
+            output << "-";
+        }
+        output << "</td><td>";
+        if (match.external_url) {
+            output << "<a href=\"" << html_escape(*match.external_url) << "\">open</a>";
+        }
+        output << "</td></tr>";
     }
     output << "</tbody></table></main></body></html>\n";
     return output.str();

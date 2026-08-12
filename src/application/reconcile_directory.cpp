@@ -5,6 +5,19 @@
 #include <vector>
 
 namespace crumb::application {
+namespace {
+void preserve_custom_metadata(const domain::FileMetadata& previous,
+                              domain::FileMetadata& refreshed) {
+    for (const auto& [key, value] : previous.extension_fields) {
+        // crumb.* fields are maintained by extractors; all other extension
+        // fields are user metadata and must survive a filesystem reindex.
+        if (!key.starts_with("crumb.") && !refreshed.extension_fields.contains(key)) {
+            refreshed.extension_fields.emplace(key, value);
+        }
+    }
+}
+}
+
 std::expected<ReconcileResult, std::string> ReconcileDirectory::execute(const domain::DirectoryPath& directory) {
     auto loaded = manifests_.load(directory);
     if (!loaded) return std::unexpected(loaded.error());
@@ -30,7 +43,9 @@ std::expected<ReconcileResult, std::string> ReconcileDirectory::execute(const do
         if (existing && manifest.files()[matched].name.value() == snapshot.name.value() &&
             manifest.files()[matched].metadata.size == snapshot.metadata.size &&
             manifest.files()[matched].metadata.modified_ns == snapshot.metadata.modified_ns &&
+            manifest.files()[matched].metadata.created_ns == snapshot.metadata.created_ns &&
             manifest.files()[matched].fingerprint.value() == snapshot.fingerprint.value() &&
+            manifest.files()[matched].metadata.external_url == snapshot.metadata.external_url &&
             manifest.files()[matched].metadata.extension_fields.contains("crumb.search_terms_v2")) {
             observed[matched] = true;
             continue;
@@ -39,6 +54,7 @@ std::expected<ReconcileResult, std::string> ReconcileDirectory::execute(const do
         if (!metadata) return std::unexpected(metadata.error());
         domain::FileEntry entry;
         if (matched < manifest.files().size()) {
+            preserve_custom_metadata(manifest.files()[matched].metadata, metadata.value());
             entry.id = manifest.files()[matched].id;
             entry.name = snapshot.name;
             entry.metadata = std::move(metadata.value());

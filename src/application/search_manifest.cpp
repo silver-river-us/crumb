@@ -35,11 +35,24 @@ SearchResult to_result(const domain::SearchIndex& index, const domain::SearchQue
             match.score = hit.score;
             result.matches.push_back(std::move(match));
         } else {
-            result.matches.push_back({location.directory, location.name, hit.score, {}, std::nullopt, std::nullopt});
+            result.matches.push_back({location.directory, location.name, hit.score, {}, location.external_url,
+                                      std::nullopt, std::nullopt, location.created_ns, location.modified_ns,
+                                      location.file_id.empty() ? std::nullopt
+                                                                : std::optional<std::string>(location.file_id)});
         }
     }
     std::ranges::sort(result.matches, [](const auto& left, const auto& right) {
         if (left.score != right.score) return left.score > right.score;
+        if (left.created_ns != right.created_ns) {
+            if (!left.created_ns) return false;
+            if (!right.created_ns) return true;
+            return *left.created_ns > *right.created_ns;
+        }
+        if (left.modified_ns != right.modified_ns) {
+            if (!left.modified_ns) return false;
+            if (!right.modified_ns) return true;
+            return *left.modified_ns > *right.modified_ns;
+        }
         if (left.directory.value() != right.directory.value()) return left.directory.value() < right.directory.value();
         return left.name.value() < right.name.value();
     });
@@ -94,7 +107,9 @@ std::expected<SearchResult, std::string> SearchManifest::execute(
             builder.add(current, entry);
             metadata.emplace(Location{current.value(), entry.name.value()},
                              SearchMatch{current, entry.name, 0.0, entry.metadata.type,
-                                         entry.metadata.title, entry.metadata.author});
+                                         entry.metadata.external_url, entry.metadata.title,
+                                         entry.metadata.author, entry.metadata.created_ns,
+                                         entry.metadata.modified_ns, file_id_hash(entry.id)});
         }
     }
     add_trace(trace, "load_manifests", overall_started, manifests_started,

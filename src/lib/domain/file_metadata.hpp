@@ -16,6 +16,7 @@ struct FileMetadata {
     std::optional<std::uintmax_t> inode;
     std::optional<std::uintmax_t> device;
     std::optional<std::string> content_hash;
+    std::optional<std::string> external_url;
     std::optional<std::string> title;
     std::optional<std::string> author;
     std::vector<std::string> tags;

@@ -73,7 +73,14 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> NativeFileSystem::
             metadata.size = item.file_size();
             metadata.modified_ns = ns(item.last_write_time());
             struct stat info{};
-            if (::stat(item.path().c_str(), &info) == 0) { metadata.inode = static_cast<std::uintmax_t>(info.st_ino); metadata.device = static_cast<std::uintmax_t>(info.st_dev); }
+            if (::stat(item.path().c_str(), &info) == 0) {
+                metadata.inode = static_cast<std::uintmax_t>(info.st_ino);
+                metadata.device = static_cast<std::uintmax_t>(info.st_dev);
+#if defined(__APPLE__)
+                metadata.created_ns = static_cast<std::int64_t>(info.st_birthtimespec.tv_sec) * 1'000'000'000 +
+                                      static_cast<std::int64_t>(info.st_birthtimespec.tv_nsec);
+#endif
+            }
             // This lightweight native adapter provides an inexpensive streamed fingerprint.
             StreamingHash hasher(".");
             auto fingerprint = hasher.fingerprint_path(item.path());

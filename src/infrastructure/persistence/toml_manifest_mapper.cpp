@@ -78,7 +78,7 @@ std::expected<domain::DirectoryManifest, std::string> TomlManifestMapper::fromTo
             if (!id || !type || !fingerprint || !size || !modified) return std::unexpected("file record missing required field: " + name);
             domain::FileMetadata metadata; metadata.type = *type; metadata.size = *size; metadata.modified_ns = static_cast<std::int64_t>(*modified);
             for (const auto& [key, value] : values) {
-                if (key == "content_hash") metadata.content_hash = unquote(value); else if (key == "created_ns") { if (auto n = integer_field(values, key)) metadata.created_ns = static_cast<std::int64_t>(*n); } else if (key == "inode") metadata.inode = integer_field(values, key); else if (key == "device") metadata.device = integer_field(values, key); else if (key == "title") metadata.title = unquote(value); else if (key == "author") metadata.author = unquote(value); else if (key == "extractor") metadata.extractor = unquote(value); else if (key != "id" && key != "type" && key != "size" && key != "modified_ns" && key != "fingerprint") metadata.extension_fields[key] = value;
+            if (key == "content_hash") metadata.content_hash = unquote(value); else if (key == "external_url") metadata.external_url = unquote(value); else if (key == "created_ns") { if (auto n = integer_field(values, key)) metadata.created_ns = static_cast<std::int64_t>(*n); } else if (key == "inode") metadata.inode = integer_field(values, key); else if (key == "device") metadata.device = integer_field(values, key); else if (key == "title") metadata.title = unquote(value); else if (key == "author") metadata.author = unquote(value); else if (key == "extractor") metadata.extractor = unquote(value); else if (key != "id" && key != "type" && key != "size" && key != "modified_ns" && key != "fingerprint") metadata.extension_fields[key] = value;
             }
             manifest.add({domain::FileId::create(*id), domain::FileName::create(name), std::move(metadata), domain::Fingerprint::create(*fingerprint)});
         } catch (const std::exception& e) { return std::unexpected(e.what()); }
@@ -95,6 +95,7 @@ std::string TomlManifestMapper::toToml(const domain::DirectoryManifest& manifest
         out << "size = " << file.metadata.size << "\n" << "modified_ns = " << file.metadata.modified_ns << "\n";
         out << "fingerprint = " << quote(file.fingerprint.value()) << "\n";
         if (file.metadata.content_hash) out << "content_hash = " << quote(*file.metadata.content_hash) << "\n";
+        if (file.metadata.external_url) out << "external_url = " << quote(*file.metadata.external_url) << "\n";
         if (file.metadata.created_ns) out << "created_ns = " << *file.metadata.created_ns << "\n";
         if (file.metadata.inode) out << "inode = " << *file.metadata.inode << "\n";
         if (file.metadata.device) out << "device = " << *file.metadata.device << "\n";

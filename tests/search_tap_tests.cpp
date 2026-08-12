@@ -8,7 +8,8 @@ int main() {
     crumb::application::SearchResult result;
     result.inspected = 3;
     result.matches.push_back({directory, crumb::domain::FileName::create("proposal.md"), 1.25,
-                              "text/markdown", std::nullopt, std::nullopt});
+                              "text/markdown", "https://drive.google.com/open?id=abc_123-xyz",
+                              std::nullopt, std::nullopt});
     result.trace = {
         {"query_parse", 0, 14, "2 terms"},
         {"index_load", 14, 32, "persisted index"},
@@ -27,6 +28,11 @@ int main() {
     assert(html.find("<!doctype html>") != std::string::npos);
     assert(html.find("&lt;proposal&gt;") != std::string::npos);
     assert(html.find("proposal.md") != std::string::npos);
+    assert(html.find("https://drive.google.com/open?id=abc_123-xyz") != std::string::npos);
+    assert(html.find(">open</a>") != std::string::npos);
+    assert(html.find("<th>Created</th>") != std::string::npos);
+    assert(html.find("<th>Edited</th>") != std::string::npos);
+    assert(html.find("<th>ID</th>") != std::string::npos);
     assert(html.find("width:25.93%") != std::string::npos);
 
     crumb::application::SearchResult slow_result;

@@ -25,13 +25,6 @@ add_library(crumb_application
 target_include_directories(crumb_application PUBLIC src src/lib)
 target_link_libraries(crumb_application PUBLIC crumb_lib)
 
-add_library(crumb_boundary
-    src/boundary/cli/command_router.cpp
-    src/boundary/cli/search_tap.cpp
-)
-target_include_directories(crumb_boundary PUBLIC src src/lib)
-target_link_libraries(crumb_boundary PRIVATE crumb_application)
-
 add_library(crumb_infrastructure
     src/infrastructure/persistence/toml_manifest_mapper.cpp
     src/infrastructure/persistence/toml_manifest_repository.cpp
@@ -44,8 +37,22 @@ add_library(crumb_infrastructure
 target_include_directories(crumb_infrastructure PUBLIC src src/lib)
 target_link_libraries(crumb_infrastructure PRIVATE crumb_lib ZLIB::ZLIB Threads::Threads)
 
+add_library(crumb_google_drive
+    src/plugins/google_drive/google_drive_plugin.cpp
+)
+target_include_directories(crumb_google_drive PUBLIC src src/lib)
+target_link_libraries(crumb_google_drive PUBLIC crumb_application crumb_infrastructure)
+
+add_library(crumb_boundary
+    src/boundary/cli/command_router.cpp
+    src/boundary/cli/search_tap.cpp
+    src/boundary/cli/user_config.cpp
+)
+target_include_directories(crumb_boundary PUBLIC src src/lib)
+target_link_libraries(crumb_boundary PRIVATE crumb_application crumb_google_drive)
+
 add_executable(crumb src/main.cpp)
-target_link_libraries(crumb PRIVATE crumb_boundary crumb_infrastructure)
+target_link_libraries(crumb PRIVATE crumb_boundary crumb_google_drive crumb_infrastructure)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -59,4 +66,13 @@ if(BUILD_TESTING)
     add_executable(crumb_search_tap_tests tests/search_tap_tests.cpp)
     target_link_libraries(crumb_search_tap_tests PRIVATE crumb_boundary)
     add_test(NAME crumb_search_tap_tests COMMAND crumb_search_tap_tests)
+    add_executable(crumb_user_config_tests tests/user_config_tests.cpp)
+    target_link_libraries(crumb_user_config_tests PRIVATE crumb_boundary)
+    add_test(NAME crumb_user_config_tests COMMAND crumb_user_config_tests)
+    add_executable(crumb_google_drive_tests tests/google_drive_tests.cpp)
+    target_link_libraries(crumb_google_drive_tests PRIVATE crumb_google_drive)
+    add_test(NAME crumb_google_drive_tests COMMAND crumb_google_drive_tests)
+    add_executable(crumb_reconcile_tests tests/reconcile_tests.cpp)
+    target_link_libraries(crumb_reconcile_tests PRIVATE crumb_application crumb_infrastructure)
+    add_test(NAME crumb_reconcile_tests COMMAND crumb_reconcile_tests)
 endif()

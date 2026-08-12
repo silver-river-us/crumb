@@ -9,6 +9,7 @@
 #include "infrastructure/persistence/binary_search_index_repository.hpp"
 #include "infrastructure/system/system_clock.hpp"
 #include "infrastructure/system/ulid_generator.hpp"
+#include "plugins/google_drive/google_drive_plugin.hpp"
 namespace crumb::infrastructure {
 struct ApplicationComponents {
     TomlManifestRepository manifests;
@@ -17,12 +18,14 @@ struct ApplicationComponents {
     StreamingHash hashes{""};
     UlidGenerator ids;
     SystemClock clock;
+    plugins::google_drive::GoogleDrivePlugin drive;
     application::IndexSize index_size;
     application::ReconcileDirectory reconcile;
     application::RebuildSearchIndex rebuild_index;
     application::SearchManifest search;
     ApplicationComponents()
-        : index_size(index), reconcile(manifests, filesystem, hashes, filesystem, ids, clock),
+        : drive(filesystem, manifests, index, hashes, ids, clock), index_size(index),
+          reconcile(manifests, filesystem, hashes, filesystem, ids, clock),
           rebuild_index(manifests, filesystem, index), search(manifests, filesystem, &index) {}
 };
 }

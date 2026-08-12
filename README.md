@@ -25,11 +25,24 @@ The scan reports `scanned`, `added`, `updated`, `removed`, and elapsed time. It 
 ## Search
 
 ```sh
-build/crumb search "technical proposal" limit 10
-build/crumb search path/to/directory "technical proposal" limit 10
+build/crumb search "technical proposal" --limit 10
+build/crumb search path/to/directory "technical proposal" --limit 10
 ```
 
-Search uses case insensitive fuzzy matching and rank weighting over file names, metadata, tags, extension fields, and persisted index terms.
+Search uses case insensitive fuzzy matching and rank weighting over file names, directory paths, metadata, tags, extension fields, and persisted index terms. Results with equal relevance are ordered newest-first by creation date, then edit date. Every indexed file has a stable `fid:` reference derived from its manifest identity; use that ID in future metadata commands. Multi-word queries require every term to match the same result; common `document`/`documents` queries also match abbreviated `docs` folders.
+
+Search displays full result cards by default. Use `--table` for a PostgreSQL-style result table with inline clickable links; interactive table output opens in a scrollable pager. `--full` and `--details` remain accepted aliases for the default card view.
+
+### Directory aliases
+
+Crumb optionally loads `~/.crumb.conf` when it starts. Define aliases in TOML under `[aliases]`:
+
+```toml
+[aliases]
+vault = "~/Develop/vault"
+```
+
+An alias can be used wherever a directory is accepted. For example, `build/crumb search vault "technical proposal"` searches `~/Develop/vault`; `build/crumb scan vault` and `build/crumb index_size vault` work the same way. Alias values beginning with `~/` expand to the current user’s home directory.
 
 Use `--tap` to show a query waterfall in the terminal:
 
@@ -42,6 +55,19 @@ Use `--tap html` (or `--tap=html`) to emit a self contained HTML report, which c
 ```sh
 build/crumb search "technical proposal" --tap html > search_tap.html
 ```
+
+## Google Drive
+
+When Google Drive for desktop is mounted locally, index it explicitly before searching:
+
+```sh
+build/crumb index drive
+build/crumb search drive "technical proposal" --limit 10
+build/crumb search drive "technical proposal" --limit 10 --table
+build/crumb search drive "technical proposal" --tap html > drive_search.html
+```
+
+The Drive plugin reads local files and Drive’s local item-id metadata; it does not use the Drive API, OAuth, or a watcher. Search results include the browser URL derived from that metadata, while the result table shows each file’s local creation and edit dates. The default index is safe for streamed Drive mounts: filenames, metadata, links, and readable plain-text files are indexed, while browser-backed Office files use metadata fallback. To attempt bounded local Office extraction for materialized files, set `CRUMB_DRIVE_CONTENT=1` when indexing. Run `crumb index drive` again after local Drive changes. User metadata stored in manifest extension fields is preserved during reindexing; extractor-owned `crumb.*` fields may be refreshed.
 
 ## Index size
 

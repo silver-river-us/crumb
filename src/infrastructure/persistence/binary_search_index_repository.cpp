@@ -7,7 +7,9 @@
 
 namespace crumb::infrastructure {
 namespace {
-constexpr char magic[] = "CRZ1";
+constexpr char magic[] = "CRZ5";
+constexpr char legacy_modified_magic[] = "CRZ4";
+constexpr char legacy_magic[] = "CRZ3";
 template <typename T> void write_number(std::ostream& out, T value) { out.write(reinterpret_cast<const char*>(&value), sizeof value); }
 template <typename T> bool read_number(std::istream& in, T& value) { return static_cast<bool>(in.read(reinterpret_cast<char*>(&value), sizeof value)); }
 void write_string(std::ostream& out, const std::string& value) {
@@ -25,6 +27,13 @@ void serialize(std::ostream& out, const domain::SearchIndex& index) {
     for (const auto& document : index.documents) {
         write_string(out, document.directory.value());
         write_string(out, document.name.value());
+        write_string(out, document.file_id);
+        write_number(out, static_cast<std::uint8_t>(document.external_url.has_value()));
+        if (document.external_url) write_string(out, *document.external_url);
+        write_number(out, static_cast<std::uint8_t>(document.created_ns.has_value()));
+        if (document.created_ns) write_number(out, *document.created_ns);
+        write_number(out, static_cast<std::uint8_t>(document.modified_ns.has_value()));
+        if (document.modified_ns) write_number(out, *document.modified_ns);
     }
     write_number(out, static_cast<std::uint32_t>(index.terms.size()));
     for (const auto& term : index.terms) {
@@ -36,15 +45,46 @@ void serialize(std::ostream& out, const domain::SearchIndex& index) {
         }
     }
 }
-std::expected<domain::SearchIndex, std::string> deserialize(std::istream& in) {
+std::expected<domain::SearchIndex, std::string> deserialize(
+    std::istream& in, bool has_modified_ns, bool has_file_id) {
     domain::SearchIndex index;
     std::uint32_t document_count{}, term_count{};
     if (!read_number(in, document_count) || document_count > 100'000'000) return std::unexpected("invalid document count");
     index.documents.reserve(document_count);
     for (std::uint32_t i = 0; i < document_count; ++i) {
         std::string directory, name;
-        if (!read_string(in, directory) || !read_string(in, name)) return std::unexpected("truncated search index");
-        try { index.documents.push_back({domain::DirectoryPath::create(std::move(directory)), domain::FileName::create(std::move(name))}); }
+        std::string file_id;
+        std::uint8_t has_external_url{};
+        if (!read_string(in, directory) || !read_string(in, name) ||
+            (has_file_id && !read_string(in, file_id)) ||
+            !read_number(in, has_external_url) || has_external_url > 1) {
+            return std::unexpected("truncated search index");
+        }
+        std::optional<std::string> external_url;
+        if (has_external_url) {
+            std::string value;
+            if (!read_string(in, value)) return std::unexpected("truncated search index");
+            external_url = std::move(value);
+        }
+        std::uint8_t has_created_ns{};
+        if (!read_number(in, has_created_ns) || has_created_ns > 1) return std::unexpected("truncated search index");
+        std::optional<std::int64_t> created_ns;
+        if (has_created_ns) {
+            std::int64_t value{};
+            if (!read_number(in, value)) return std::unexpected("truncated search index");
+            created_ns = value;
+        }
+        std::optional<std::int64_t> modified_ns;
+        if (has_modified_ns) {
+            std::uint8_t has_modified{};
+            if (!read_number(in, has_modified) || has_modified > 1) return std::unexpected("truncated search index");
+            if (has_modified) {
+                std::int64_t value{};
+                if (!read_number(in, value)) return std::unexpected("truncated search index");
+                modified_ns = value;
+            }
+        }
+        try { index.documents.push_back({domain::DirectoryPath::create(std::move(directory)), domain::FileName::create(std::move(name)), std::move(file_id), std::move(external_url), created_ns, modified_ns}); }
         catch (const std::exception& error) { return std::unexpected(error.what()); }
     }
     if (!read_number(in, term_count) || term_count > 10'000'000) return std::unexpected("invalid term count");
@@ -105,7 +145,11 @@ std::expected<domain::SearchIndex, std::string> BinarySearchIndexRepository::loa
     std::ifstream in(path, std::ios::binary);
     if (!in) return std::unexpected("cannot read " + path.string());
     char header[sizeof magic - 1]{};
-    if (!in.read(header, sizeof header) || std::string(header, sizeof header) != magic) return std::unexpected("invalid search index " + path.string());
+    if (!in.read(header, sizeof header)) return std::unexpected("invalid search index " + path.string());
+    const std::string version(header, sizeof header);
+    if (version != magic && version != legacy_modified_magic && version != legacy_magic) {
+        return std::unexpected("invalid search index " + path.string());
+    }
     std::uint64_t raw_size{}, compressed_size{};
     if (!read_number(in, raw_size) || !read_number(in, compressed_size) || raw_size > 512ULL * 1024 * 1024 || compressed_size > 512ULL * 1024 * 1024)
         return std::unexpected("invalid search index sizes");
@@ -116,6 +160,6 @@ std::expected<domain::SearchIndex, std::string> BinarySearchIndexRepository::loa
     if (uncompress(reinterpret_cast<Bytef*>(raw.data()), &output_size, compressed.data(), static_cast<uLong>(compressed_size)) != Z_OK || output_size != raw_size)
         return std::unexpected("cannot decompress search index");
     std::istringstream payload(raw, std::ios::binary);
-    return deserialize(payload);
+    return deserialize(payload, version != legacy_magic, version == magic);
 }
 }

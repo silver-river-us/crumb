@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace crumb::domain {
@@ -60,6 +62,20 @@ public:
     }
     using ValidatedString::operator<=>;
 };
+
+inline std::string file_id_hash(const FileId& id) {
+    constexpr std::string_view hex = "0123456789abcdef";
+    std::uint64_t hash = 14695981039346656037ull;
+    for (const unsigned char character : id.value()) {
+        hash ^= character;
+        hash *= 1099511628211ull;
+    }
+    std::string result = "fid:";
+    for (int shift = 60; shift >= 0; shift -= 4) {
+        result += hex[(hash >> shift) & 0x0f];
+    }
+    return result;
+}
 
 class Fingerprint : public ValidatedString {
 public:

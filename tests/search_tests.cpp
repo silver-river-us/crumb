@@ -91,8 +91,12 @@ int main() {
     FileMetadata proposal_metadata;
     proposal_metadata.type = "text/markdown";
     proposal_metadata.title = "Technical Proposal";
+    proposal_metadata.external_url = "https://drive.google.com/open?id=abc_123-xyz";
+    proposal_metadata.created_ns = 1;
+    proposal_metadata.modified_ns = 11;
     proposal_metadata.tags = {"architecture", "design"};
     proposal_metadata.extension_fields["crumb.search_terms_v2"] = "this document describes domain driven design";
+    proposal_metadata.extension_fields["shared"] = "contract";
     manifest.add({
         FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"),
         FileName::create("proposal.md"),
@@ -101,6 +105,9 @@ int main() {
 
     FileMetadata report_metadata;
     report_metadata.type = "application/pdf";
+    report_metadata.created_ns = 2;
+    report_metadata.modified_ns = 12;
+    report_metadata.extension_fields["shared"] = "contract";
     manifest.add({
         FileId::create("01K1AC4K3N7JZM5F21V6PH8QRT"),
         FileName::create("annual.report.pdf"),
@@ -124,12 +131,20 @@ int main() {
     assert(indexed_match->trace.size() == 3);
     assert(indexed_match->trace[1].name == "index_load");
     assert(indexed_match->trace[1].detail == "persisted index");
+    assert(indexed_match->matches.front().external_url.value() == "https://drive.google.com/open?id=abc_123-xyz");
+    assert(indexed_match->matches.front().file_id ==
+           file_id_hash(repository.manifest->find(FileName::create("proposal.md"))->id));
 
     auto title_match = search.execute(directory, "technical proposal");
     assert(title_match.has_value());
     assert(title_match->inspected == 2);
     assert(title_match->matches.size() == 1);
     assert(title_match->matches.front().name.value() == "proposal.md");
+    assert(title_match->matches.front().external_url.value() == "https://drive.google.com/open?id=abc_123-xyz");
+    assert(title_match->matches.front().created_ns == 1);
+    assert(title_match->matches.front().modified_ns == 11);
+    assert(title_match->matches.front().file_id ==
+           file_id_hash(repository.manifest->find(FileName::create("proposal.md"))->id));
     assert(title_match->trace.size() == 5);
     assert(title_match->trace.front().name == "query_parse");
     assert(title_match->trace.back().name == "rank_results");
@@ -148,6 +163,13 @@ int main() {
     assert(tag_match.has_value());
     assert(tag_match->matches.size() == 1);
 
+    auto date_ordered = search.execute(directory, "contract");
+    assert(date_ordered.has_value());
+    assert(date_ordered->matches.size() == 2);
+    assert(date_ordered->matches.front().name.value() == "annual.report.pdf");
+    assert(date_ordered->matches.front().created_ns == 2);
+    assert(date_ordered->matches.front().modified_ns == 12);
+
     auto extension_match = search.execute(directory, ".PDF");
     assert(extension_match.has_value());
     assert(extension_match->matches.size() == 1);
@@ -155,4 +177,28 @@ int main() {
 
     auto empty_query = search.execute(directory, "");
     assert(!empty_query.has_value());
+
+    SearchIndexBuilder path_builder;
+    path_builder.add(DirectoryPath::create("Shared drives/Internal Docs/Contracts"),
+                     repository.manifest->files().front());
+    auto path_index = std::move(path_builder).build();
+    auto path_query = SearchQuery::create("internal documents contracts");
+    assert(path_query.has_value());
+    assert(path_index.search(*path_query).size() == 1);
+
+    SearchIndexBuilder conjunction_builder;
+    conjunction_builder.add(directory, repository.manifest->files()[0]);
+    conjunction_builder.add(directory, repository.manifest->files()[1]);
+    auto conjunction_index = std::move(conjunction_builder).build();
+    auto conjunction_query = SearchQuery::create("proposal annual");
+    assert(conjunction_query.has_value());
+    assert(conjunction_index.search(*conjunction_query).empty());
+
+    SearchIndexBuilder document_alias_builder;
+    document_alias_builder.add(DirectoryPath::create("Internal Docs"), repository.manifest->files()[0]);
+    document_alias_builder.add(DirectoryPath::create("Internal Documents"), repository.manifest->files()[1]);
+    auto document_alias_index = std::move(document_alias_builder).build();
+    auto document_alias_query = SearchQuery::create("documents");
+    assert(document_alias_query.has_value());
+    assert(document_alias_index.search(*document_alias_query).size() == 2);
 }
