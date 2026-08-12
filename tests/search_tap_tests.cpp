@@ -58,12 +58,18 @@ int main() {
 
     crumb::application::SearchResult empty;
     empty.matches.push_back({crumb::domain::DirectoryPath::create("."),
-                             crumb::domain::FileName::create("plain.txt"), 0.0, {}, std::nullopt,
-                             std::nullopt, std::nullopt, std::numeric_limits<std::int64_t>::max(),
-                             std::numeric_limits<std::int64_t>::max(), std::nullopt});
-    const auto escaped_html = crumb::boundary::render_search_tap(
-        "<&>\"'", crumb::domain::DirectoryPath::create("<&>\"'"), empty,
-        crumb::boundary::TapFormat::html);
+                             crumb::domain::FileName::create("plain.txt"),
+                             0.0,
+                             {},
+                             std::nullopt,
+                             std::nullopt,
+                             std::nullopt,
+                             std::numeric_limits<std::int64_t>::max(),
+                             std::numeric_limits<std::int64_t>::max(),
+                             std::nullopt});
+    const auto escaped_html =
+        crumb::boundary::render_search_tap("<&>\"'", crumb::domain::DirectoryPath::create("<&>\"'"),
+                                           empty, crumb::boundary::TapFormat::html);
     assert(escaped_html.find("&amp;") != std::string::npos);
     assert(escaped_html.find("&lt;") != std::string::npos);
     assert(escaped_html.find("&gt;") != std::string::npos);

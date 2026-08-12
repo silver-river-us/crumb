@@ -16,16 +16,20 @@ jobs:
   static-checks:
     name: Static checks
     runs-on: ubuntu-latest
+    env:
+      CXX: clang++
+      CXXFLAGS: -stdlib=libc++
+      LDFLAGS: -stdlib=libc++
     steps:
       - uses: actions/checkout@v4
 
       - name: Install toolchain and analyzers
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang clang-tidy clang-format cppcheck iwyu cmake ninja-build zlib1g-dev
+          sudo apt-get install --yes clang clang-tidy clang-format cppcheck iwyu cmake ninja-build zlib1g-dev libc++-dev libc++abi-dev
 
       - name: Configure
-        run: cmake --preset default -G Ninja
+        run: cmake --preset default -G Ninja -D CMAKE_CXX_COMPILER=clang++ -D CMAKE_CXX_FLAGS=-stdlib=libc++ -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
 
       - name: Build
         run: cmake --build --preset default
@@ -41,38 +45,46 @@ jobs:
         run: ctest --preset default
 
   address-and-undefined-sanitizers:
-    name: ASan and UBSan
+    name: Memory safety (ASan + UBSan)
     runs-on: ubuntu-latest
+    env:
+      CXX: clang++
+      CXXFLAGS: -stdlib=libc++
+      LDFLAGS: -stdlib=libc++
     steps:
       - uses: actions/checkout@v4
 
       - name: Install compiler and build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang cmake ninja-build zlib1g-dev
+          sudo apt-get install --yes clang cmake ninja-build zlib1g-dev libc++-dev libc++abi-dev libclang-rt-dev
 
       - name: Configure
-        run: cmake --preset asan-ubsan -G Ninja -D CMAKE_CXX_COMPILER=clang++
+        run: cmake --preset asan-ubsan -G Ninja -D CMAKE_CXX_COMPILER=clang++ -D CMAKE_CXX_FLAGS=-stdlib=libc++ -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
 
       - name: Build
         run: cmake --build --preset asan-ubsan
 
-      - name: Run sanitizer tests
+      - name: Run AddressSanitizer and UndefinedBehaviorSanitizer tests
         run: ctest --preset asan-ubsan
 
   coverage:
     name: Coverage report
     runs-on: ubuntu-latest
+    env:
+      CXX: clang++
+      CXXFLAGS: -stdlib=libc++
+      LDFLAGS: -stdlib=libc++
     steps:
       - uses: actions/checkout@v4
 
       - name: Install LLVM compiler, coverage tools, and build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang llvm cmake ninja-build zlib1g-dev
+          sudo apt-get install --yes clang llvm cmake ninja-build zlib1g-dev libc++-dev libc++abi-dev libclang-rt-dev
 
       - name: Configure coverage build
-        run: cmake --preset coverage -G Ninja -D CMAKE_CXX_COMPILER=clang++
+        run: cmake --preset coverage -G Ninja -D CMAKE_CXX_COMPILER=clang++ -D CMAKE_CXX_FLAGS=-stdlib=libc++ -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
 
       - name: Build coverage binaries
         run: cmake --build --preset coverage
@@ -81,21 +93,25 @@ jobs:
         run: bin/coverage
 
   thread-sanitizer:
-    name: TSan
+    name: Thread safety (TSan)
     runs-on: ubuntu-latest
+    env:
+      CXX: clang++
+      CXXFLAGS: -stdlib=libc++
+      LDFLAGS: -stdlib=libc++
     steps:
       - uses: actions/checkout@v4
 
       - name: Install compiler and build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang cmake ninja-build zlib1g-dev
+          sudo apt-get install --yes clang cmake ninja-build zlib1g-dev libc++-dev libc++abi-dev libclang-rt-dev
 
       - name: Configure
-        run: cmake --preset tsan -G Ninja -D CMAKE_CXX_COMPILER=clang++
+        run: cmake --preset tsan -G Ninja -D CMAKE_CXX_COMPILER=clang++ -D CMAKE_CXX_FLAGS=-stdlib=libc++ -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
 
       - name: Build
         run: cmake --build --preset tsan
 
-      - name: Run sanitizer tests
+      - name: Run ThreadSanitizer tests
         run: ctest --preset tsan

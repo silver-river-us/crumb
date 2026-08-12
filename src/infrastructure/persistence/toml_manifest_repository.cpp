@@ -7,7 +7,7 @@
 
 namespace crumb::infrastructure {
 namespace {
-using LoadFunction = std::expected<std::optional<domain::DirectoryManifest>, std::string> (*) (
+using LoadFunction = std::expected<std::optional<domain::DirectoryManifest>, std::string> (*)(
     TomlManifestRepository&, const domain::DirectoryPath&);
 
 LoadFunction load_function = [](TomlManifestRepository& repository,

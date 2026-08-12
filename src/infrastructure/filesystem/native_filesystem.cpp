@@ -80,7 +80,7 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> NativeFileSystem::
             metadata.type = mime(name.value());
             metadata.size = item.file_size();
             metadata.modified_ns = ns(item.last_write_time());
-            struct stat info{};
+            struct stat info {};
             if (::stat(item.path().c_str(), &info) == 0) {
                 metadata.inode = static_cast<std::uintmax_t>(info.st_ino);
                 metadata.device = static_cast<std::uintmax_t>(info.st_dev);

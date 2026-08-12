@@ -35,9 +35,8 @@ std::filesystem::path temp_root() {
 }
 
 domain::DirectoryManifest manifest_at(const std::filesystem::path& path) {
-    auto manifest = domain::DirectoryManifest::create(directory_id_constant,
-                                                       domain::DirectoryPath::create(path.string()),
-                                                       "now", "test");
+    auto manifest = domain::DirectoryManifest::create(
+        directory_id_constant, domain::DirectoryPath::create(path.string()), "now", "test");
     domain::FileMetadata metadata;
     metadata.type = "text/plain";
     metadata.size = 4;
@@ -73,12 +72,14 @@ class SearchIndexRepository final : public ports::SearchIndexRepository {
     bool fail_load = false;
     bool fail_size = false;
 
-    std::expected<void, std::string> save(const domain::DirectoryPath&, const domain::SearchIndex& index) override {
+    std::expected<void, std::string> save(const domain::DirectoryPath&,
+                                          const domain::SearchIndex& index) override {
         if (fail_save) return std::unexpected("index save failed");
         value = index;
         return {};
     }
-    std::expected<domain::SearchIndex, std::string> load(const domain::DirectoryPath&) const override {
+    std::expected<domain::SearchIndex, std::string> load(
+        const domain::DirectoryPath&) const override {
         if (fail_load || !value) return std::unexpected("index load failed");
         return *value;
     }
@@ -90,10 +91,12 @@ class SearchIndexRepository final : public ports::SearchIndexRepository {
 
 class Fingerprints final : public ports::FingerprintService {
    public:
-    std::expected<domain::Fingerprint, std::string> fingerprint(const domain::DirectoryPath&, const domain::FileName&) override {
+    std::expected<domain::Fingerprint, std::string> fingerprint(const domain::DirectoryPath&,
+                                                                const domain::FileName&) override {
         return domain::Fingerprint::create("drive:fingerprint");
     }
-    std::expected<domain::ContentHash, std::string> content_hash(const domain::DirectoryPath&, const domain::FileName&) override {
+    std::expected<domain::ContentHash, std::string> content_hash(const domain::DirectoryPath&,
+                                                                 const domain::FileName&) override {
         return domain::ContentHash::create("drive:content");
     }
 };
@@ -189,9 +192,12 @@ void filesystem_tests(const std::filesystem::path& root) {
     auto directories = filesystem.list_directories_recursive(path);
     assert(directories.has_value() && directories->size() == 2);
     assert(filesystem.read_text_file(path, domain::FileName::create("a.md"))->has_value());
-    assert(!filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string())));
-    assert(!filesystem.list_regular_files_recursive(domain::DirectoryPath::create((root / "missing").string())));
-    assert(!filesystem.list_directories_recursive(domain::DirectoryPath::create((root / "missing").string())));
+    assert(
+        !filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string())));
+    assert(!filesystem.list_regular_files_recursive(
+        domain::DirectoryPath::create((root / "missing").string())));
+    assert(!filesystem.list_directories_recursive(
+        domain::DirectoryPath::create((root / "missing").string())));
 
 #ifdef __APPLE__
     constexpr char item_attribute[] = "com.google.drivefs.item-id#S";
@@ -211,13 +217,19 @@ void filesystem_tests(const std::filesystem::path& root) {
     auto metadata = extractor.extract(path, domain::FileName::create("a.md"), {});
     assert(metadata.has_value());
     assert(metadata->title == "a");
-    assert(metadata->extension_fields.at("crumb.search_terms_v2").find("drive") != std::string::npos);
+#ifdef __APPLE__
+    assert(metadata->extension_fields.at("crumb.search_terms_v2").find("drive") !=
+           std::string::npos);
+#else
+    assert(!metadata->extension_fields.contains("crumb.search_terms_v2"));
+#endif
     auto office = extractor.extract(domain::DirectoryPath::create((root / "nested").string()),
                                     domain::FileName::create("note.doc"), {});
     assert(office.has_value());
     setenv("CRUMB_DRIVE_CONTENT", "1", 1);
-    auto office_enabled = extractor.extract(domain::DirectoryPath::create((root / "nested").string()),
-                                            domain::FileName::create("note.doc"), {});
+    auto office_enabled =
+        extractor.extract(domain::DirectoryPath::create((root / "nested").string()),
+                          domain::FileName::create("note.doc"), {});
     assert(office_enabled.has_value());
     assert(extractor.extract(path, domain::FileName::create("a.md"), {}).has_value());
     assert(extractor.extract(path, domain::FileName::create("z.pdf"), {}).has_value());
@@ -261,7 +273,8 @@ void plugin_tests(const std::filesystem::path& root) {
     Ids ids;
     Clock clock;
     infrastructure::NativeFileSystem native;
-    plugins::google_drive::GoogleDrivePlugin plugin(native, manifests, indexes, fingerprints, ids, clock);
+    plugins::google_drive::GoogleDrivePlugin plugin(native, manifests, indexes, fingerprints, ids,
+                                                    clock);
     assert(plugin.resolve(source.string()).value().value() == source.string());
     assert(!plugin.resolve((root / "missing").string()));
     auto indexed = plugin.index(source.string());
@@ -269,7 +282,12 @@ void plugin_tests(const std::filesystem::path& root) {
     assert(indexed->reconcile.scanned == 1);
     assert(indexes.value.has_value());
     auto searched = plugin.search(domain::DirectoryPath::create(source.string()), "technical", 10);
-    assert(searched.has_value() && searched->matches.size() == 1);
+    assert(searched.has_value());
+#ifdef __APPLE__
+    assert(searched->matches.size() == 1);
+#else
+    assert(searched->matches.empty());
+#endif
     assert(!plugin.index((root / "missing").string()));
 
     const auto old_home = std::getenv("HOME");
@@ -279,10 +297,12 @@ void plugin_tests(const std::filesystem::path& root) {
     std::filesystem::create_directories(root / "empty-home" / "Library" / "CloudStorage");
     setenv("HOME", (root / "empty-home").c_str(), 1);
     assert(!plugin.resolve());
-    std::filesystem::create_directories(root / "one-home" / "Library" / "CloudStorage" / "GoogleDrive-one");
+    std::filesystem::create_directories(root / "one-home" / "Library" / "CloudStorage" /
+                                        "GoogleDrive-one");
     setenv("HOME", (root / "one-home").c_str(), 1);
     assert(plugin.resolve().has_value());
-    std::filesystem::create_directories(root / "one-home" / "Library" / "CloudStorage" / "GoogleDrive-two");
+    std::filesystem::create_directories(root / "one-home" / "Library" / "CloudStorage" /
+                                        "GoogleDrive-two");
     assert(!plugin.resolve());
     unsetenv("HOME");
     assert(!plugin.resolve());

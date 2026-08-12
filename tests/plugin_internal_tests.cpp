@@ -19,18 +19,18 @@ void command_output_tests() {
     const auto old_fork = plugins::google_drive::testing::fork_process;
     plugins::google_drive::testing::pipe_function = fail_pipe;
     assert(!plugins::google_drive::command_output("printf 'unreachable'", 64,
-                                                   std::chrono::milliseconds(250)));
+                                                  std::chrono::milliseconds(250)));
     plugins::google_drive::testing::pipe_function = old_pipe;
     plugins::google_drive::testing::fork_process = fail_fork;
     assert(!plugins::google_drive::command_output("printf 'unreachable'", 64,
-                                                   std::chrono::milliseconds(250)));
+                                                  std::chrono::milliseconds(250)));
     plugins::google_drive::testing::fork_process = old_fork;
-    const auto output = plugins::google_drive::command_output("printf 'hello'", 64,
-                                                               std::chrono::milliseconds(250));
+    const auto output =
+        plugins::google_drive::command_output("printf 'hello'", 64, std::chrono::milliseconds(250));
     assert(output && *output == "hello");
     assert(!plugins::google_drive::command_output("sleep 1", 64, std::chrono::milliseconds(1)));
     assert(!plugins::google_drive::command_output("printf 'too-long'", 3,
-                                                   std::chrono::milliseconds(250)));
+                                                  std::chrono::milliseconds(250)));
 #endif
 }
 

@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <vector>
 
 int main() {
@@ -31,7 +32,8 @@ int main() {
     assert(config->resolve_directory("unaliased") == "unaliased");
     {
         std::ofstream output(config_path);
-        output << "[aliases]\nroot = \"~\"\nescaped = \"quote: \\\" slash \\\\ line \\n \\r \\t\"\n";
+        output
+            << "[aliases]\nroot = \"~\"\nescaped = \"quote: \\\" slash \\\\ line \\n \\r \\t\"\n";
     }
     const auto escaped = crumb::boundary::UserConfig::load(config_path, home);
     assert(escaped.has_value());
@@ -48,8 +50,8 @@ int main() {
     const auto invalid = crumb::boundary::UserConfig::load(config_path, home);
     assert(!invalid.has_value());
 
-    const std::vector<std::string> invalid_configs = {
-        "[aliases]\nmissing_equals\n", "[aliases]\nvalid = plain\n"};
+    const std::vector<std::string> invalid_configs = {"[aliases]\nmissing_equals\n",
+                                                      "[aliases]\nvalid = plain\n"};
     for (const auto& text : invalid_configs) {
         std::ofstream output(config_path);
         output << text;
@@ -72,10 +74,12 @@ int main() {
     assert(crumb::boundary::UserConfig::load(invalid_path, home).has_value());
     const auto restricted = directory / "restricted";
     std::filesystem::create_directories(restricted);
-    assert(::chmod(restricted.c_str(), 0) == 0);
-    const auto inaccessible = crumb::boundary::UserConfig::load(restricted / "config", home);
-    assert(::chmod(restricted.c_str(), 0700) == 0);
-    assert(!inaccessible.has_value());
+    if (::geteuid() != 0) {
+        assert(::chmod(restricted.c_str(), 0) == 0);
+        const auto inaccessible = crumb::boundary::UserConfig::load(restricted / "config", home);
+        assert(::chmod(restricted.c_str(), 0700) == 0);
+        assert(!inaccessible.has_value());
+    }
 
     setenv("HOME", home.c_str(), 1);
     assert(crumb::boundary::UserConfig::load_default().has_value());

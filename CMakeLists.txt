@@ -85,15 +85,18 @@ target_link_libraries(crumb PRIVATE crumb_boundary crumb_google_drive crumb_infr
 find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy
     HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
 if(CLANG_TIDY_EXECUTABLE)
+    set(CLANG_TIDY_EXTRA_ARGS)
     if(APPLE)
         execute_process(COMMAND xcrun --show-sdk-path
             OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
             OUTPUT_STRIP_TRAILING_WHITESPACE)
+        list(APPEND CLANG_TIDY_EXTRA_ARGS
+            --extra-arg-before=-isysroot
+            --extra-arg-before=${CMAKE_OSX_SYSROOT})
     endif()
     add_custom_target(lint
         COMMAND ${CLANG_TIDY_EXECUTABLE} -p ${CMAKE_BINARY_DIR}
-                $<$<BOOL:${APPLE}>:--extra-arg-before=-isysroot>
-                $<$<BOOL:${APPLE}>:--extra-arg-before=${CMAKE_OSX_SYSROOT}>
+                ${CLANG_TIDY_EXTRA_ARGS}
                 ${CMAKE_SOURCE_DIR}/src/main.cpp
                 ${CMAKE_SOURCE_DIR}/src/application/reconcile_directory.cpp
                 ${CMAKE_SOURCE_DIR}/src/application/rebuild_search_index.cpp

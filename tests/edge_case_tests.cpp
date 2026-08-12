@@ -48,14 +48,16 @@ void value_and_manifest_tests() {
     throws([] { (void)domain::ContentHash::create("missing"); });
     assert(domain::file_id_hash(file_id).starts_with("fid:"));
 
-    auto manifest = domain::DirectoryManifest::create(directory_id,
-                                                       domain::DirectoryPath::create("."));
+    auto manifest =
+        domain::DirectoryManifest::create(directory_id, domain::DirectoryPath::create("."));
     manifest.add(entry("b"));
     manifest.add(entry("a", domain::FileId::create("01K1AC4K3N7JZM5F21V6PH8QRT")));
     assert(manifest.files().front().name.value() == "a");
     throws([&] { manifest.add(entry("a")); });
     throws([&] { manifest.remove(domain::FileName::create("missing")); });
-    throws([&] { manifest.rename(domain::FileName::create("missing"), domain::FileName::create("x")); });
+    throws([&] {
+        manifest.rename(domain::FileName::create("missing"), domain::FileName::create("x"));
+    });
     throws([&] { manifest.rename(domain::FileName::create("a"), domain::FileName::create("b")); });
     throws([&] { manifest.update(entry("missing")); });
     throws([&] { manifest.update(entry("a")); });
@@ -102,11 +104,17 @@ class Filesystem final : public ports::FileSystem {
     bool directory_error = false;
     std::vector<domain::DirectoryPath> directories;
     std::expected<std::vector<domain::FileSnapshot>, std::string> list_regular_files(
-        const domain::DirectoryPath&) override { return std::vector<domain::FileSnapshot>{}; }
+        const domain::DirectoryPath&) override {
+        return std::vector<domain::FileSnapshot>{};
+    }
     std::expected<std::optional<std::string>, std::string> read_text_file(
-        const domain::DirectoryPath&, const domain::FileName&) override { return std::nullopt; }
+        const domain::DirectoryPath&, const domain::FileName&) override {
+        return std::nullopt;
+    }
     std::expected<std::vector<std::pair<domain::DirectoryPath, domain::FileName>>, std::string>
-    list_regular_files_recursive(const domain::DirectoryPath&) override { return {}; }
+    list_regular_files_recursive(const domain::DirectoryPath&) override {
+        return {};
+    }
     std::expected<std::vector<domain::DirectoryPath>, std::string> list_directories_recursive(
         const domain::DirectoryPath& directory) override {
         if (directory_error) return std::unexpected("directory error");
@@ -135,11 +143,13 @@ class Index final : public ports::SearchIndexRepository {
    public:
     bool save_error = false;
     bool load_error = false;
-    std::expected<void, std::string> save(const domain::DirectoryPath&, const domain::SearchIndex&) override {
+    std::expected<void, std::string> save(const domain::DirectoryPath&,
+                                          const domain::SearchIndex&) override {
         if (save_error) return std::unexpected("index save error");
         return {};
     }
-    std::expected<domain::SearchIndex, std::string> load(const domain::DirectoryPath&) const override {
+    std::expected<domain::SearchIndex, std::string> load(
+        const domain::DirectoryPath&) const override {
         if (load_error) return std::unexpected("index load error");
         return domain::SearchIndex{};
     }

@@ -24,8 +24,8 @@ const auto id = domain::DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX");
 const auto file_id = domain::FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6");
 
 domain::DirectoryManifest manifest_at(const std::filesystem::path& path) {
-    auto manifest = domain::DirectoryManifest::create(id, domain::DirectoryPath::create(path.string()),
-                                                       "2026-08-11T00:00:00Z", "test");
+    auto manifest = domain::DirectoryManifest::create(
+        id, domain::DirectoryPath::create(path.string()), "2026-08-11T00:00:00Z", "test");
     domain::FileMetadata metadata;
     metadata.type = "text/markdown";
     metadata.size = 7;
@@ -124,11 +124,11 @@ void binary_repository_tests(const std::filesystem::path& root) {
     std::filesystem::remove_all(root / ".crumb.index");
 
     const auto index_path = root / ".crumb.index";
-    auto replace = [&](std::string bytes) {
+    auto replace = [&](const std::string& bytes) {
         std::ofstream output(index_path, std::ios::binary | std::ios::trunc);
         output.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
     };
-    auto malformed_payload = [&](std::string payload, std::string_view magic = "CRZ5") {
+    auto malformed_payload = [&](const std::string& payload, std::string_view magic = "CRZ5") {
         write_index_file(index_path, magic, payload);
         assert(!repository.load(domain::DirectoryPath::create(root.string())));
     };
@@ -281,10 +281,8 @@ void binary_repository_tests(const std::filesystem::path& root) {
     replace(bad_compression);
     assert(!repository.load(domain::DirectoryPath::create(root.string())));
 
-    for (const auto [magic, modified, file_ids] :
-         std::vector<std::tuple<std::string, bool, bool>>{{"CRZ5", true, true},
-                                                          {"CRZ4", true, false},
-                                                          {"CRZ3", false, false}}) {
+    for (const auto [magic, modified, file_ids] : std::vector<std::tuple<std::string, bool, bool>>{
+             {"CRZ5", true, true}, {"CRZ4", true, false}, {"CRZ3", false, false}}) {
         write_index_file(index_path, magic, valid_payload(modified, file_ids));
         auto old = repository.load(domain::DirectoryPath::create(root.string()));
         assert(old.has_value());
@@ -318,19 +316,23 @@ void native_and_hash_tests(const std::filesystem::path& root) {
     assert(files->front().name.value() == "a.md");
     assert(files->front().metadata.type == "text/markdown");
     assert(files->back().name.value() == "unknown.bin");
-    auto recursive = filesystem.list_regular_files_recursive(domain::DirectoryPath::create(root.string()));
+    auto recursive =
+        filesystem.list_regular_files_recursive(domain::DirectoryPath::create(root.string()));
     assert(recursive.has_value());
     assert(recursive->size() == 5);
     auto dirs = filesystem.list_directories_recursive(domain::DirectoryPath::create(root.string()));
     assert(dirs.has_value());
     assert(dirs->size() == 2);
-    assert(!filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string())));
+    assert(
+        !filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string())));
     assert(!filesystem.list_regular_files_recursive(
         domain::DirectoryPath::create((root / "missing").string())));
     assert(!filesystem.list_directories_recursive(
         domain::DirectoryPath::create((root / "missing").string())));
-    assert(filesystem.read_text_file(domain::DirectoryPath::create(root.string()),
-                                     domain::FileName::create("b.txt"))->value() == "Hello, hello!");
+    assert(filesystem
+               .read_text_file(domain::DirectoryPath::create(root.string()),
+                               domain::FileName::create("b.txt"))
+               ->value() == "Hello, hello!");
     auto binary = filesystem.read_text_file(domain::DirectoryPath::create(root.string()),
                                             domain::FileName::create("unknown.bin"));
     assert(binary.has_value() && !binary->has_value());
@@ -350,11 +352,12 @@ void native_and_hash_tests(const std::filesystem::path& root) {
     assert(binary_extract.has_value());
     assert(binary_extract->extension_fields.empty());
 
-    assert(hashes.fingerprint(domain::DirectoryPath::create("."),
-                              domain::FileName::create("b.txt")).has_value());
+    assert(hashes.fingerprint(domain::DirectoryPath::create("."), domain::FileName::create("b.txt"))
+               .has_value());
     assert(hashes.fingerprint_path(root / "b.txt").has_value());
-    assert(hashes.content_hash(domain::DirectoryPath::create("."),
-                               domain::FileName::create("b.txt")).has_value());
+    assert(
+        hashes.content_hash(domain::DirectoryPath::create("."), domain::FileName::create("b.txt"))
+            .has_value());
     assert(!hashes.fingerprint_path(root / "missing").has_value());
 }
 
@@ -369,11 +372,13 @@ void toml_repository_tests(const std::filesystem::path& root) {
     auto loaded = repository.load(path);
     assert(loaded.has_value() && loaded->has_value());
     assert(loaded->value().files().front().metadata.author == "An author");
-    auto batch = repository.load_many({path, domain::DirectoryPath::create((root / "missing").string())});
+    auto batch =
+        repository.load_many({path, domain::DirectoryPath::create((root / "missing").string())});
     assert(batch.has_value() && batch->size() == 2 && !batch->back().second);
     const auto invalid_directory = domain::DirectoryPath::create(std::string("bad\0path", 8));
     auto invalid_batch = repository.load_many({invalid_directory});
-    assert(invalid_batch.has_value() && invalid_batch->size() == 1 && !invalid_batch->front().second);
+    assert(invalid_batch.has_value() && invalid_batch->size() == 1 &&
+           !invalid_batch->front().second);
 
     std::ofstream(toml_root / ".crumb") << "not a manifest";
     assert(!repository.load(path));
@@ -395,14 +400,17 @@ void toml_repository_tests(const std::filesystem::path& root) {
     infrastructure::TomlManifestMapper mapper;
     assert(!mapper.fromToml("version = 1\ndirectory_id = \"bad\"\ngenerated_at = \"now\"\n"));
     assert(!mapper.fromToml("version = 1\ndirectory_id = \"01K1AB5YZ4QH7M2D8E3F9G6JNX\"\n"));
-    assert(!mapper.fromToml("version = 1\ndirectory_id = \"01K1AB5YZ4QH7M2D8E3F9G6JNX\"\n"
-                            "generated_at = \"now\"\n[files.x]\nid = \"01K1ADN1ZC5R7H4XB8QKMP2TV6\"\n"));
-    assert(!mapper.fromToml("version = 1\ndirectory_id = \"01K1AB5YZ4QH7M2D8E3F9G6JNX\"\n"
-                            "generated_at = \"now\"\n[files.x]\n"
-                            "id = \"bad\"\ntype = \"text\"\nsize = 1\nmodified_ns = 2\n"
-                            "fingerprint = \"xxh3:x\"\n"));
-    assert(mapper.fromToml("version = 1\ndirectory_id = \"01K1AB5YZ4QH7M2D8E3F9G6JNX\"\n"
-                           "generated_at = \"now\"\n generator = \"g\\n\\r\\t\\q\"\n")
+    assert(!mapper.fromToml(
+        "version = 1\ndirectory_id = \"01K1AB5YZ4QH7M2D8E3F9G6JNX\"\n"
+        "generated_at = \"now\"\n[files.x]\nid = \"01K1ADN1ZC5R7H4XB8QKMP2TV6\"\n"));
+    assert(
+        !mapper.fromToml("version = 1\ndirectory_id = \"01K1AB5YZ4QH7M2D8E3F9G6JNX\"\n"
+                         "generated_at = \"now\"\n[files.x]\n"
+                         "id = \"bad\"\ntype = \"text\"\nsize = 1\nmodified_ns = 2\n"
+                         "fingerprint = \"xxh3:x\"\n"));
+    assert(mapper
+               .fromToml("version = 1\ndirectory_id = \"01K1AB5YZ4QH7M2D8E3F9G6JNX\"\n"
+                         "generated_at = \"now\"\n generator = \"g\\n\\r\\t\\q\"\n")
                .has_value());
 }
 }  // namespace

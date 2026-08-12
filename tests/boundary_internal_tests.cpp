@@ -28,8 +28,8 @@ application::SearchResult result_with_url() {
     application::SearchResult result;
     result.matches.push_back({path("/tmp/outside"), domain::FileName::create("a-very-long-name.md"),
                               1.0, "text/markdown", "https://example.test/item", std::nullopt,
-                              std::nullopt, 1'700'000'000'000'000'000,
-                              1'700'000'001'000'000'000, "fid:test"});
+                              std::nullopt, 1'700'000'000'000'000'000, 1'700'000'001'000'000'000,
+                              "fid:test"});
     return result;
 }
 
@@ -40,8 +40,8 @@ void formatting_helpers() {
     assert(crumb::boundary::shorten("abcdefgh", 8) == "abcdefgh");
     assert(crumb::boundary::shorten("abcdefgh", 7) == "ab...gh");
     assert(crumb::boundary::shorten("abcdefgh", 2) == "ab");
-    assert(crumb::boundary::clickable_url("https://example.test", true, "open")
-               .find("open") != std::string::npos);
+    assert(crumb::boundary::clickable_url("https://example.test", true, "open").find("open") !=
+           std::string::npos);
 
     const auto invalid_root = path(std::string("bad\0root", 8));
     const auto match = result_with_url().matches.front();
@@ -91,9 +91,11 @@ void pager_helper() {
     std::ostringstream ignored;
     crumb::boundary::print_search_table(ignored, path("/tmp/root"), result_with_url(), true);
 
-    struct rlimit old_limit{};
+    struct rlimit old_limit {};
     assert(::getrlimit(RLIMIT_NOFILE, &old_limit) == 0);
-    struct rlimit exhausted_limit{0, old_limit.rlim_max};
+    struct rlimit exhausted_limit {
+        0, old_limit.rlim_max
+    };
     assert(::setrlimit(RLIMIT_NOFILE, &exhausted_limit) == 0);
     std::ostringstream fallback;
     crumb::boundary::print_search_table(fallback, path("/tmp/root"), result_with_url(), true);

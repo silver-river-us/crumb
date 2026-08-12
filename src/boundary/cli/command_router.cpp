@@ -50,8 +50,8 @@ std::string relative_result_path(const domain::DirectoryPath& root,
                                  const application::SearchMatch& match) {
     std::error_code error;
     const bool invalid_path = root.value().find('\0') != std::string::npos ||
-        match.directory.value().find('\0') != std::string::npos ||
-        match.name.value().find('\0') != std::string::npos;
+                              match.directory.value().find('\0') != std::string::npos ||
+                              match.name.value().find('\0') != std::string::npos;
     const auto root_path = std::filesystem::absolute(root.value(), error);
     const auto full_path = std::filesystem::absolute(
         std::filesystem::path(match.directory.value()) / match.name.value(), error);
