@@ -1,5 +1,7 @@
 # crumb
 
+[![CI](https://github.com/silver-river-us/crumb/actions/workflows/quality.yml/badge.svg)](https://github.com/silver-river-us/crumb/actions/workflows/quality.yml)
+
 Crumb stores filesystem metadata in `.crumb` manifests and creates a compact search index. It records metadata only. It never stores original file content or previews.
 
 ## Architecture
