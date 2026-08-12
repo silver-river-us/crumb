@@ -7,11 +7,11 @@
 
 namespace {
 class InMemoryManifestRepository final : public crumb::ports::ManifestRepository {
-public:
+   public:
     std::optional<crumb::domain::DirectoryManifest> manifest;
 
-    std::expected<std::optional<crumb::domain::DirectoryManifest>, std::string>
-    load(const crumb::domain::DirectoryPath&) override {
+    std::expected<std::optional<crumb::domain::DirectoryManifest>, std::string> load(
+        const crumb::domain::DirectoryPath&) override {
         return manifest;
     }
 
@@ -21,24 +21,25 @@ public:
 };
 
 class InMemoryFileSystem final : public crumb::ports::FileSystem {
-public:
+   public:
     std::map<std::string, std::string> contents;
 
-    std::expected<std::vector<crumb::domain::FileSnapshot>, std::string>
-    list_regular_files(const crumb::domain::DirectoryPath&) override {
+    std::expected<std::vector<crumb::domain::FileSnapshot>, std::string> list_regular_files(
+        const crumb::domain::DirectoryPath&) override {
         return std::vector<crumb::domain::FileSnapshot>{};
     }
-
 
     std::expected<std::vector<crumb::domain::DirectoryPath>, std::string>
     list_directories_recursive(const crumb::domain::DirectoryPath& directory) override {
         return std::vector<crumb::domain::DirectoryPath>{directory};
     }
 
-    std::expected<std::vector<std::pair<crumb::domain::DirectoryPath, crumb::domain::FileName>>, std::string>
+    std::expected<std::vector<std::pair<crumb::domain::DirectoryPath, crumb::domain::FileName>>,
+                  std::string>
     list_regular_files_recursive(const crumb::domain::DirectoryPath& directory) override {
         std::vector<std::pair<crumb::domain::DirectoryPath, crumb::domain::FileName>> result;
-        for (const auto& [name, _] : contents) result.emplace_back(directory, crumb::domain::FileName::create(name));
+        for (const auto& [name, _] : contents)
+            result.emplace_back(directory, crumb::domain::FileName::create(name));
         return result;
     }
 
@@ -51,11 +52,11 @@ public:
 };
 
 class InMemorySearchIndexRepository final : public crumb::ports::SearchIndexRepository {
-public:
+   public:
     std::optional<crumb::domain::SearchIndex> index;
 
-    std::expected<void, std::string> save(
-        const crumb::domain::DirectoryPath&, const crumb::domain::SearchIndex& value) override {
+    std::expected<void, std::string> save(const crumb::domain::DirectoryPath&,
+                                          const crumb::domain::SearchIndex& value) override {
         index = value;
         return {};
     }
@@ -71,7 +72,7 @@ public:
         return 0;
     }
 };
-}
+}  // namespace
 
 int main() {
     using namespace crumb::domain;
@@ -86,8 +87,8 @@ int main() {
     assert(missing->inspected == 0);
     assert(missing->matches.empty());
 
-    auto manifest = DirectoryManifest::create(
-        DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"), directory);
+    auto manifest =
+        DirectoryManifest::create(DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"), directory);
     FileMetadata proposal_metadata;
     proposal_metadata.type = "text/markdown";
     proposal_metadata.title = "Technical Proposal";
@@ -95,34 +96,37 @@ int main() {
     proposal_metadata.created_ns = 1;
     proposal_metadata.modified_ns = 11;
     proposal_metadata.tags = {"architecture", "design"};
-    proposal_metadata.extension_fields["crumb.search_terms_v2"] = "this document describes domain driven design";
+    proposal_metadata.extension_fields["crumb.search_terms_v2"] =
+        "this document describes domain driven design";
     proposal_metadata.extension_fields["shared"] = "contract";
-    manifest.add({
-        FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"),
-        FileName::create("proposal.md"),
-        proposal_metadata,
-        Fingerprint::create("xxh3:73abc14b02e9")});
+    manifest.add({FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"), FileName::create("proposal.md"),
+                  proposal_metadata, Fingerprint::create("xxh3:73abc14b02e9")});
 
     FileMetadata report_metadata;
     report_metadata.type = "application/pdf";
     report_metadata.created_ns = 2;
     report_metadata.modified_ns = 12;
     report_metadata.extension_fields["shared"] = "contract";
-    manifest.add({
-        FileId::create("01K1AC4K3N7JZM5F21V6PH8QRT"),
-        FileName::create("annual.report.pdf"),
-        report_metadata,
-        Fingerprint::create("xxh3:884fa2c0f7d3")});
+    manifest.add({FileId::create("01K1AC4K3N7JZM5F21V6PH8QRT"),
+                  FileName::create("annual.report.pdf"), report_metadata,
+                  Fingerprint::create("xxh3:884fa2c0f7d3")});
+    FileMetadata memo_metadata;
+    memo_metadata.type = "text/plain";
+    memo_metadata.created_ns = 2;
+    memo_metadata.extension_fields["shared"] = "contract";
+    manifest.add({FileId::create("01K1AEQ1ZC5R7H4XB8QKMP2TV6"), FileName::create("memo.txt"),
+                  memo_metadata, Fingerprint::create("xxh3:99fa2c0f7d3")});
     repository.manifest = std::move(manifest);
     filesystem.contents["proposal.md"] = "This document describes domain driven design.";
     filesystem.contents["annual.report.pdf"] = "Annual financial report.";
+    filesystem.contents["memo.txt"] = "A contract memo.";
 
     InMemorySearchIndexRepository index;
     crumb::application::RebuildSearchIndex rebuild_index(repository, filesystem, index);
     const auto rebuilt = rebuild_index.execute(directory);
     assert(rebuilt.has_value());
     assert(index.index.has_value());
-    assert(index.index->documents.size() == 2);
+    assert(index.index->documents.size() == 3);
     assert(index.index->terms.size() >= 5);
 
     crumb::application::SearchManifest indexed_search(repository, filesystem, &index);
@@ -131,16 +135,18 @@ int main() {
     assert(indexed_match->trace.size() == 3);
     assert(indexed_match->trace[1].name == "index_load");
     assert(indexed_match->trace[1].detail == "persisted index");
-    assert(indexed_match->matches.front().external_url.value() == "https://drive.google.com/open?id=abc_123-xyz");
+    assert(indexed_match->matches.front().external_url.value() ==
+           "https://drive.google.com/open?id=abc_123-xyz");
     assert(indexed_match->matches.front().file_id ==
            file_id_hash(repository.manifest->find(FileName::create("proposal.md"))->id));
 
     auto title_match = search.execute(directory, "technical proposal");
     assert(title_match.has_value());
-    assert(title_match->inspected == 2);
+    assert(title_match->inspected == 3);
     assert(title_match->matches.size() == 1);
     assert(title_match->matches.front().name.value() == "proposal.md");
-    assert(title_match->matches.front().external_url.value() == "https://drive.google.com/open?id=abc_123-xyz");
+    assert(title_match->matches.front().external_url.value() ==
+           "https://drive.google.com/open?id=abc_123-xyz");
     assert(title_match->matches.front().created_ns == 1);
     assert(title_match->matches.front().modified_ns == 11);
     assert(title_match->matches.front().file_id ==
@@ -165,7 +171,7 @@ int main() {
 
     auto date_ordered = search.execute(directory, "contract");
     assert(date_ordered.has_value());
-    assert(date_ordered->matches.size() == 2);
+    assert(date_ordered->matches.size() == 3);
     assert(date_ordered->matches.front().name.value() == "annual.report.pdf");
     assert(date_ordered->matches.front().created_ns == 2);
     assert(date_ordered->matches.front().modified_ns == 12);
@@ -195,8 +201,10 @@ int main() {
     assert(conjunction_index.search(*conjunction_query).empty());
 
     SearchIndexBuilder document_alias_builder;
-    document_alias_builder.add(DirectoryPath::create("Internal Docs"), repository.manifest->files()[0]);
-    document_alias_builder.add(DirectoryPath::create("Internal Documents"), repository.manifest->files()[1]);
+    document_alias_builder.add(DirectoryPath::create("Internal Docs"),
+                               repository.manifest->files()[0]);
+    document_alias_builder.add(DirectoryPath::create("Internal Documents"),
+                               repository.manifest->files()[1]);
     auto document_alias_index = std::move(document_alias_builder).build();
     auto document_alias_query = SearchQuery::create("documents");
     assert(document_alias_query.has_value());

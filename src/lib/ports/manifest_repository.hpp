@@ -13,10 +13,10 @@ using LoadedManifest = std::optional<domain::DirectoryManifest>;
 using LoadedManifestBatch = std::vector<std::pair<domain::DirectoryPath, LoadedManifest>>;
 
 class ManifestRepository {
-public:
+   public:
     virtual ~ManifestRepository() = default;
-    virtual std::expected<LoadedManifest, ManifestError>
-    load(const domain::DirectoryPath& directory) = 0;
+    virtual std::expected<LoadedManifest, ManifestError> load(
+        const domain::DirectoryPath& directory) = 0;
 
     virtual std::expected<LoadedManifestBatch, ManifestError> load_many(
         const std::vector<domain::DirectoryPath>& directories) {
@@ -32,4 +32,4 @@ public:
 
     virtual std::expected<void, ManifestError> save(const domain::DirectoryManifest& manifest) = 0;
 };
-}
+}  // namespace crumb::ports

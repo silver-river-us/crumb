@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+root_dir=${0%/*}/..
+cd "$root_dir"
+
+if ! command -v clang-tidy >/dev/null 2>&1 && [ ! -x /opt/homebrew/opt/llvm/bin/clang-tidy ] && [ ! -x /usr/local/opt/llvm/bin/clang-tidy ]; then
+    echo "clang-tidy is required. Install it with: brew install llvm" >&2
+    exit 127
+fi
+
+bin/build >/dev/null
+cmake --build build --target lint

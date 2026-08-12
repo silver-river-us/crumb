@@ -3,12 +3,13 @@
 #include <random>
 namespace crumb::infrastructure {
 class UlidGenerator final : public ports::IdGenerator {
-public:
+   public:
     UlidGenerator();
     domain::DirectoryId directory_id() override;
     domain::FileId file_id() override;
-private:
+
+   private:
     std::mt19937_64 random_;
     std::string generate();
 };
-}
+}  // namespace crumb::infrastructure

@@ -4,14 +4,15 @@
 
 namespace crumb::application {
 class IndexSize {
-public:
+   public:
     explicit IndexSize(ports::SearchIndexRepository& index) : index_(index) {}
 
-    std::expected<std::uintmax_t, std::string> execute(const domain::DirectoryPath& directory) const {
+    std::expected<std::uintmax_t, std::string> execute(
+        const domain::DirectoryPath& directory) const {
         return index_.size(directory);
     }
 
-private:
+   private:
     ports::SearchIndexRepository& index_;
 };
-}
+}  // namespace crumb::application

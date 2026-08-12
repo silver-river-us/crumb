@@ -14,4 +14,4 @@ std::string SystemClock::now_utc() {
     std::strftime(buffer, sizeof(buffer), "%Y_%m_%dT%H:%M:%SZ", &utc);
     return buffer;
 }
-}
+}  // namespace crumb::infrastructure

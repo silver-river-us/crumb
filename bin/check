@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+root_dir=${0%/*}/..
+cd "$root_dir"
+
+bin/lint
+cmake --build build --target format-check cppcheck iwyu

@@ -15,18 +15,79 @@
         "BUILD_TESTING": "ON",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
+    },
+    {
+      "name": "asan-ubsan",
+      "displayName": "Address and Undefined Behavior Sanitizers",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/asan-ubsan",
+      "cacheVariables": {
+        "CRUMB_SANITIZERS": "address,undefined"
+      }
+    },
+    {
+      "name": "tsan",
+      "displayName": "Thread Sanitizer",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/tsan",
+      "cacheVariables": {
+        "CRUMB_SANITIZERS": "thread"
+      }
+    },
+    {
+      "name": "coverage",
+      "displayName": "LLVM source-based coverage",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/coverage",
+      "cacheVariables": {
+        "CRUMB_ENABLE_COVERAGE": "ON",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "default",
       "configurePreset": "default"
+    },
+    {
+      "name": "asan-ubsan",
+      "configurePreset": "asan-ubsan"
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan"
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage"
     }
   ],
   "testPresets": [
     {
       "name": "default",
       "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "asan-ubsan",
+      "configurePreset": "asan-ubsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage",
       "output": {
         "outputOnFailure": true
       }

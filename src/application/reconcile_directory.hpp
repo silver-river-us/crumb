@@ -19,14 +19,21 @@ struct ReconcileResult {
     std::size_t removed{};
 };
 class ReconcileDirectory {
-public:
+   public:
     ReconcileDirectory(ports::ManifestRepository& manifests, ports::FileSystem& filesystem,
                        ports::FingerprintService& fingerprints, ports::MetadataExtractor& extractor,
                        ports::IdGenerator& ids, ports::Clock& clock)
-        : manifests_(manifests), filesystem_(filesystem), fingerprints_(fingerprints), extractor_(extractor), ids_(ids), clock_(clock) {}
+        : manifests_(manifests),
+          filesystem_(filesystem),
+          fingerprints_(fingerprints),
+          extractor_(extractor),
+          ids_(ids),
+          clock_(clock) {}
     std::expected<ReconcileResult, std::string> execute(const domain::DirectoryPath& directory);
-    std::expected<ReconcileResult, std::string> execute_recursive(const domain::DirectoryPath& directory);
-private:
+    std::expected<ReconcileResult, std::string> execute_recursive(
+        const domain::DirectoryPath& directory);
+
+   private:
     ports::ManifestRepository& manifests_;
     ports::FileSystem& filesystem_;
     ports::FingerprintService& fingerprints_;
@@ -34,4 +41,4 @@ private:
     ports::IdGenerator& ids_;
     ports::Clock& clock_;
 };
-}
+}  // namespace crumb::application

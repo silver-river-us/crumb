@@ -1,0 +1,42 @@
+#!/bin/sh
+set -eu
+
+root_dir=${0%/*}/..
+cd "$root_dir"
+
+llvm_bin=
+if [ "$(uname)" = Darwin ]; then
+    llvm_bin=$(dirname "$(xcrun --find llvm-cov)")
+fi
+for candidate in "$(command -v llvm-cov 2>/dev/null || true)" /opt/homebrew/opt/llvm/bin/llvm-cov /usr/local/opt/llvm/bin/llvm-cov; do
+    if [ -n "$llvm_bin" ]; then break; fi
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+        llvm_bin=${candidate%/llvm-cov}
+        break
+    fi
+done
+if [ -z "$llvm_bin" ] || [ ! -x "$llvm_bin/llvm-profdata" ]; then
+    echo "llvm-cov and llvm-profdata are required. Install them with: brew install llvm" >&2
+    exit 127
+fi
+
+cmake --preset coverage
+cmake --build --preset coverage
+rm -f build/coverage/*.profraw build/coverage/coverage.profdata
+LLVM_PROFILE_FILE="$PWD/build/coverage/%m.profraw" ctest --preset coverage
+"$llvm_bin/llvm-profdata" merge --sparse build/coverage/*.profraw -o build/coverage/coverage.profdata
+"$llvm_bin/llvm-cov" report build/coverage/crumb \
+    -instr-profile=build/coverage/coverage.profdata \
+    -ignore-filename-regex='(/tests/|/usr/|/Applications/)' \
+    -object=build/coverage/crumb_manifest_tests \
+    -object=build/coverage/crumb_search_tests \
+    -object=build/coverage/crumb_search_tap_tests \
+    -object=build/coverage/crumb_user_config_tests \
+    -object=build/coverage/crumb_google_drive_tests \
+    -object=build/coverage/crumb_reconcile_tests \
+    -object=build/coverage/crumb_infrastructure_tests \
+    -object=build/coverage/crumb_command_router_tests \
+    -object=build/coverage/crumb_edge_case_tests \
+    -object=build/coverage/crumb_boundary_internal_tests \
+    -object=build/coverage/crumb_persistence_internal_tests \
+    -object=build/coverage/crumb_plugin_internal_tests

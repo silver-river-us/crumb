@@ -21,7 +21,7 @@
 namespace crumb::domain {
 
 class SearchQuery {
-public:
+   public:
     [[nodiscard]] static std::expected<SearchQuery, std::string> create(std::string_view value) {
         std::vector<std::string> words;
         std::string current;
@@ -40,22 +40,22 @@ public:
             }
         }
         if (!current.empty()) add(std::move(current));
-        if (words.empty()) return std::unexpected("search query must contain a word with at least 3 characters");
+        if (words.empty())
+            return std::unexpected("search query must contain a word with at least 3 characters");
         return SearchQuery(std::move(words));
     }
 
     [[nodiscard]] const std::vector<std::string>& words() const noexcept { return words_; }
 
     [[nodiscard]] static bool fuzzy_contains(const std::string& value, const std::string& word) {
-        const auto documents_alias =
-            value == "docs" && (word == "document" || word == "documents");
+        const auto documents_alias = value == "docs" && (word == "document" || word == "documents");
         if (documents_alias) return true;
         const auto prefix_length = std::max<std::size_t>(4, word.size() - 2);
         return value.find(word) != std::string::npos ||
                value.find(word.substr(0, prefix_length)) != std::string::npos;
     }
 
-private:
+   private:
     explicit SearchQuery(std::vector<std::string> words) : words_(std::move(words)) {}
 
     std::vector<std::string> words_;
@@ -96,20 +96,21 @@ struct SearchIndex {
 
         for (const auto& word : query.words()) {
             std::vector<const SearchTerm*> matching_terms;
-            const auto exact = std::ranges::lower_bound(terms, word, {}, [](const auto& term) {
-                return term.term;
-            });
+            const auto exact = std::ranges::lower_bound(terms, word, {},
+                                                        [](const auto& term) { return term.term; });
             if (exact != terms.end() && exact->term == word) {
                 matching_terms.push_back(&*exact);
                 if (word == "document" || word == "documents") {
-                    const auto docs = std::ranges::lower_bound(terms, std::string_view("docs"), {}, [](const auto& term) {
-                        return term.term;
-                    });
-                    if (docs != terms.end() && docs->term == "docs") matching_terms.push_back(&*docs);
+                    const auto docs =
+                        std::ranges::lower_bound(terms, std::string_view("docs"), {},
+                                                 [](const auto& term) { return term.term; });
+                    if (docs != terms.end() && docs->term == "docs")
+                        matching_terms.push_back(&*docs);
                 }
             } else {
                 for (const auto& term : terms) {
-                    if (SearchQuery::fuzzy_contains(term.term, word)) matching_terms.push_back(&term);
+                    if (SearchQuery::fuzzy_contains(term.term, word))
+                        matching_terms.push_back(&term);
                 }
             }
 
@@ -121,7 +122,8 @@ struct SearchIndex {
                                     ? 0.0
                                     : std::log((total + 1.0) / static_cast<double>(matched.size()));
             for (const auto* term : matching_terms) {
-                for (const auto& posting : term->postings) scores[posting.document_id] += weight * posting.count;
+                for (const auto& posting : term->postings)
+                    scores[posting.document_id] += weight * posting.count;
             }
             for (const auto document_id : matched) ++matched_words[document_id];
         }
@@ -138,12 +140,13 @@ struct SearchIndex {
 };
 
 class SearchIndexBuilder {
-public:
+   public:
     void add(DirectoryPath directory, const FileEntry& entry) {
         const auto document_id = static_cast<std::uint32_t>(index_.documents.size());
         const auto directory_value = directory.value();
-        index_.documents.push_back({std::move(directory), entry.name, file_id_hash(entry.id), entry.metadata.external_url,
-                                    entry.metadata.created_ns, entry.metadata.modified_ns});
+        index_.documents.push_back({std::move(directory), entry.name, file_id_hash(entry.id),
+                                    entry.metadata.external_url, entry.metadata.created_ns,
+                                    entry.metadata.modified_ns});
 
         std::unordered_map<std::string, std::uint32_t> terms;
         add_terms(terms, directory_value);
@@ -152,14 +155,16 @@ public:
         if (entry.metadata.title) add_terms(terms, *entry.metadata.title);
         if (entry.metadata.author) add_terms(terms, *entry.metadata.author);
         for (const auto& tag : entry.metadata.tags) add_terms(terms, tag);
-        for (const auto& [key, value] : entry.metadata.extension_fields) add_terms(terms, key + " " + value);
+        for (const auto& [key, value] : entry.metadata.extension_fields)
+            add_terms(terms, key + " " + value);
         for (const auto& [term, count] : terms) postings_[term][document_id] = count;
     }
 
     [[nodiscard]] SearchIndex build() && {
         for (auto& [term, postings] : postings_) {
             SearchTerm item{std::move(term), {}};
-            for (const auto& [document_id, count] : postings) item.postings.push_back({document_id, count});
+            for (const auto& [document_id, count] : postings)
+                item.postings.push_back({document_id, count});
             std::ranges::sort(item.postings, {}, &SearchPosting::document_id);
             index_.terms.push_back(std::move(item));
         }
@@ -167,10 +172,11 @@ public:
         return std::move(index_);
     }
 
-private:
-    static void add_terms(std::unordered_map<std::string, std::uint32_t>& terms, std::string_view text) {
+   private:
+    static void add_terms(std::unordered_map<std::string, std::uint32_t>& terms,
+                          std::string_view text) {
         std::string current;
-        const auto add = [&terms](std::string word) {
+        const auto add = [&terms](const std::string& word) {
             if (word.size() >= 3) ++terms[word];
         };
 
@@ -189,4 +195,4 @@ private:
     std::unordered_map<std::string, std::unordered_map<std::uint32_t, std::uint32_t>> postings_;
 };
 
-} // namespace crumb::domain
+}  // namespace crumb::domain

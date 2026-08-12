@@ -11,9 +11,11 @@
 namespace crumb::domain {
 
 class DirectoryManifest {
-public:
-    static DirectoryManifest create(DirectoryId id, DirectoryPath path, std::string generated_at = {}, std::string generator = {}) {
-        return DirectoryManifest(std::move(id), std::move(path), std::move(generated_at), std::move(generator));
+   public:
+    static DirectoryManifest create(DirectoryId id, DirectoryPath path,
+                                    std::string generated_at = {}, std::string generator = {}) {
+        return DirectoryManifest(std::move(id), std::move(path), std::move(generated_at),
+                                 std::move(generator));
     }
 
     void add(FileEntry entry) {
@@ -23,7 +25,8 @@ public:
     }
     void remove(const FileName& name) {
         const auto old_size = files_.size();
-        std::erase_if(files_, [&](const FileEntry& entry) { return entry.name.value() == name.value(); });
+        std::erase_if(files_,
+                      [&](const FileEntry& entry) { return entry.name.value() == name.value(); });
         if (files_.size() == old_size) throw std::out_of_range("file is not in manifest");
     }
     void rename(const FileName& from, FileName to) {
@@ -36,16 +39,19 @@ public:
     void update(FileEntry entry) {
         auto* existing = find(entry.name);
         if (existing == nullptr) throw std::out_of_range("file is not in manifest");
-        if (existing->id.value() != entry.id.value()) throw std::invalid_argument("file identity cannot change on update");
+        if (existing->id.value() != entry.id.value())
+            throw std::invalid_argument("file identity cannot change on update");
         *existing = std::move(entry);
         sort_files();
     }
     [[nodiscard]] FileEntry* find(const FileName& name) noexcept {
-        for (auto& entry : files_) if (entry.name.value() == name.value()) return &entry;
+        for (auto& entry : files_)
+            if (entry.name.value() == name.value()) return &entry;
         return nullptr;
     }
     [[nodiscard]] const FileEntry* find(const FileName& name) const noexcept {
-        for (const auto& entry : files_) if (entry.name.value() == name.value()) return &entry;
+        for (const auto& entry : files_)
+            if (entry.name.value() == name.value()) return &entry;
         return nullptr;
     }
     [[nodiscard]] const std::vector<FileEntry>& files() const noexcept { return files_; }
@@ -57,9 +63,13 @@ public:
     [[nodiscard]] const std::string& generator() const noexcept { return generator_; }
     void set_generator(std::string value) { generator_ = std::move(value); }
 
-private:
-    DirectoryManifest(DirectoryId id, DirectoryPath path, std::string generated_at, std::string generator)
-        : id_(std::move(id)), path_(std::move(path)), generated_at_(std::move(generated_at)), generator_(std::move(generator)) {}
+   private:
+    DirectoryManifest(DirectoryId id, DirectoryPath path, std::string generated_at,
+                      std::string generator)
+        : id_(std::move(id)),
+          path_(std::move(path)),
+          generated_at_(std::move(generated_at)),
+          generator_(std::move(generator)) {}
     void ensure_unique(const FileName& name) const {
         if (find(name) != nullptr) throw std::invalid_argument("duplicate filename in manifest");
     }
@@ -74,4 +84,4 @@ private:
     std::string generator_;
     std::vector<FileEntry> files_;
 };
-}
+}  // namespace crumb::domain

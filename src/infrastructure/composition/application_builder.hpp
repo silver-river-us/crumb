@@ -24,8 +24,10 @@ struct ApplicationComponents {
     application::RebuildSearchIndex rebuild_index;
     application::SearchManifest search;
     ApplicationComponents()
-        : drive(filesystem, manifests, index, hashes, ids, clock), index_size(index),
+        : drive(filesystem, manifests, index, hashes, ids, clock),
+          index_size(index),
           reconcile(manifests, filesystem, hashes, filesystem, ids, clock),
-          rebuild_index(manifests, filesystem, index), search(manifests, filesystem, &index) {}
+          rebuild_index(manifests, filesystem, index),
+          search(manifests, filesystem, &index) {}
 };
-}
+}  // namespace crumb::infrastructure

@@ -9,8 +9,9 @@ namespace crumb::boundary {
 
 enum class TapFormat { text, html };
 
-[[nodiscard]] std::string render_search_tap(
-    std::string_view query, const domain::DirectoryPath& directory,
-    const application::SearchResult& result, TapFormat format);
+[[nodiscard]] std::string render_search_tap(std::string_view query,
+                                            const domain::DirectoryPath& directory,
+                                            const application::SearchResult& result,
+                                            TapFormat format);
 
-} // namespace crumb::boundary
+}  // namespace crumb::boundary

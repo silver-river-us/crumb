@@ -1,7 +1,8 @@
 #include "application/rebuild_search_index.hpp"
 
 namespace crumb::application {
-std::expected<void, std::string> RebuildSearchIndex::execute(const domain::DirectoryPath& directory) {
+std::expected<void, std::string> RebuildSearchIndex::execute(
+    const domain::DirectoryPath& directory) {
     auto directories = filesystem_.list_directories_recursive(directory);
     if (!directories) return std::unexpected(directories.error());
 
@@ -17,4 +18,4 @@ std::expected<void, std::string> RebuildSearchIndex::execute(const domain::Direc
     return index_.save(directory, std::move(builder).build());
 }
 
-} // namespace crumb::application
+}  // namespace crumb::application

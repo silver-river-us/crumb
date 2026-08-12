@@ -6,9 +6,11 @@
 
 namespace crumb::ports {
 class FingerprintService {
-public:
+   public:
     virtual ~FingerprintService() = default;
-    virtual std::expected<domain::Fingerprint, std::string> fingerprint(const domain::DirectoryPath&, const domain::FileName&) = 0;
-    virtual std::expected<domain::ContentHash, std::string> content_hash(const domain::DirectoryPath&, const domain::FileName&) = 0;
+    virtual std::expected<domain::Fingerprint, std::string> fingerprint(
+        const domain::DirectoryPath&, const domain::FileName&) = 0;
+    virtual std::expected<domain::ContentHash, std::string> content_hash(
+        const domain::DirectoryPath&, const domain::FileName&) = 0;
 };
-}
+}  // namespace crumb::ports

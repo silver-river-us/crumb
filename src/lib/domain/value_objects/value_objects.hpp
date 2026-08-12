@@ -9,23 +9,23 @@
 namespace crumb::domain {
 
 class ValidatedString {
-public:
+   public:
     ValidatedString() = default;
     explicit ValidatedString(std::string value) : value_(std::move(value)) {}
     [[nodiscard]] const std::string& value() const noexcept { return value_; }
     [[nodiscard]] bool empty() const noexcept { return value_.empty(); }
     auto operator<=>(const ValidatedString&) const = default;
 
-protected:
+   protected:
     std::string value_;
 };
 
 class FileName : public ValidatedString {
-public:
+   public:
     using ValidatedString::ValidatedString;
     static FileName create(std::string value) {
-        if (value.empty() || value == "." || value == ".." || value.find('/') != std::string::npos ||
-            value.find('\\') != std::string::npos) {
+        if (value.empty() || value == "." || value == ".." ||
+            value.find('/') != std::string::npos || value.find('\\') != std::string::npos) {
             throw std::invalid_argument("invalid immediate filename");
         }
         return FileName(std::move(value));
@@ -34,7 +34,7 @@ public:
 };
 
 class DirectoryPath : public ValidatedString {
-public:
+   public:
     using ValidatedString::ValidatedString;
     static DirectoryPath create(std::string value) {
         if (value.empty()) throw std::invalid_argument("directory path must not be empty");
@@ -44,7 +44,7 @@ public:
 };
 
 class DirectoryId : public ValidatedString {
-public:
+   public:
     using ValidatedString::ValidatedString;
     static DirectoryId create(std::string value) {
         if (value.size() != 26) throw std::invalid_argument("directory id must be a ULID");
@@ -54,7 +54,7 @@ public:
 };
 
 class FileId : public ValidatedString {
-public:
+   public:
     using ValidatedString::ValidatedString;
     static FileId create(std::string value) {
         if (value.size() != 26) throw std::invalid_argument("file id must be a ULID");
@@ -78,23 +78,25 @@ inline std::string file_id_hash(const FileId& id) {
 }
 
 class Fingerprint : public ValidatedString {
-public:
+   public:
     using ValidatedString::ValidatedString;
     static Fingerprint create(std::string value) {
-        if (value.find(':') == std::string::npos) throw std::invalid_argument("fingerprint needs an algorithm");
+        if (value.find(':') == std::string::npos)
+            throw std::invalid_argument("fingerprint needs an algorithm");
         return Fingerprint(std::move(value));
     }
     using ValidatedString::operator<=>;
 };
 
 class ContentHash : public ValidatedString {
-public:
+   public:
     using ValidatedString::ValidatedString;
     static ContentHash create(std::string value) {
-        if (value.find(':') == std::string::npos) throw std::invalid_argument("content hash needs an algorithm");
+        if (value.find(':') == std::string::npos)
+            throw std::invalid_argument("content hash needs an algorithm");
         return ContentHash(std::move(value));
     }
     using ValidatedString::operator<=>;
 };
 
-} // namespace crumb::domain
+}  // namespace crumb::domain

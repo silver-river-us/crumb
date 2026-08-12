@@ -15,10 +15,10 @@ using Clock = std::chrono::steady_clock;
 void add_trace(std::vector<SearchTraceSpan>& trace, std::string name,
                Clock::time_point overall_started, Clock::time_point phase_started,
                std::string detail = {}) {
-    const auto offset = std::chrono::duration_cast<std::chrono::microseconds>(
-        phase_started - overall_started);
-    const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-        Clock::now() - phase_started);
+    const auto offset =
+        std::chrono::duration_cast<std::chrono::microseconds>(phase_started - overall_started);
+    const auto duration =
+        std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - phase_started);
     trace.push_back({std::move(name), static_cast<std::uint64_t>(offset.count()),
                      static_cast<std::uint64_t>(duration.count()), std::move(detail)});
 }
@@ -35,10 +35,18 @@ SearchResult to_result(const domain::SearchIndex& index, const domain::SearchQue
             match.score = hit.score;
             result.matches.push_back(std::move(match));
         } else {
-            result.matches.push_back({location.directory, location.name, hit.score, {}, location.external_url,
-                                      std::nullopt, std::nullopt, location.created_ns, location.modified_ns,
-                                      location.file_id.empty() ? std::nullopt
-                                                                : std::optional<std::string>(location.file_id)});
+            result.matches.push_back({location.directory,
+                                      location.name,
+                                      hit.score,
+                                      {},
+                                      location.external_url,
+                                      std::nullopt,
+                                      std::nullopt,
+                                      location.created_ns,
+                                      location.modified_ns,
+                                      location.file_id.empty()
+                                          ? std::nullopt
+                                          : std::optional<std::string>(location.file_id)});
         }
     }
     std::ranges::sort(result.matches, [](const auto& left, const auto& right) {
@@ -53,13 +61,14 @@ SearchResult to_result(const domain::SearchIndex& index, const domain::SearchQue
             if (!right.modified_ns) return true;
             return *left.modified_ns > *right.modified_ns;
         }
-        if (left.directory.value() != right.directory.value()) return left.directory.value() < right.directory.value();
+        if (left.directory.value() != right.directory.value())
+            return left.directory.value() < right.directory.value();
         return left.name.value() < right.name.value();
     });
     if (result.matches.size() > limit) result.matches.resize(limit);
     return result;
 }
-}
+}  // namespace
 
 std::expected<SearchResult, std::string> SearchManifest::execute(
     const domain::DirectoryPath& directory, std::string_view query, std::size_t limit) const {
@@ -127,4 +136,4 @@ std::expected<SearchResult, std::string> SearchManifest::execute(
     result.trace = std::move(trace);
     return result;
 }
-}
+}  // namespace crumb::application

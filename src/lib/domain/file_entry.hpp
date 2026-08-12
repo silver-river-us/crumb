@@ -10,4 +10,4 @@ struct FileEntry {
     FileMetadata metadata;
     Fingerprint fingerprint;
 };
-}
+}  // namespace crumb::domain

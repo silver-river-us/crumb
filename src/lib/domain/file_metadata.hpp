@@ -23,4 +23,4 @@ struct FileMetadata {
     std::optional<std::string> extractor;
     std::map<std::string, std::string> extension_fields;
 };
-}
+}  // namespace crumb::domain

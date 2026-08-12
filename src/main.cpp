@@ -13,6 +13,7 @@ int main(int argc, char** argv) {
 
     crumb::infrastructure::ApplicationComponents components;
     return crumb::boundary::CommandRouter(components.reconcile, components.rebuild_index,
-                                          components.search, components.index_size, components.drive,
-                                          std::move(*config)).run(argc, argv);
+                                          components.search, components.index_size,
+                                          components.drive, std::move(*config))
+        .run(argc, argv);
 }

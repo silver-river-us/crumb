@@ -14,6 +14,26 @@ cd build
 ctest
 ```
 
+## Quality checks
+
+Crumb enables `-Wall -Wextra -Wpedantic -Wconversion -Wshadow` for Clang/GCC builds. Set `-DCRUMB_WARNINGS_AS_ERRORS=ON` to promote those warnings to errors.
+
+The repository also provides these checks:
+
+```sh
+brew install llvm cppcheck include-what-you-use
+bin/lint                         # clang-tidy
+cmake --build build --target format-check
+cmake --build build --target cppcheck
+cmake --build build --target iwyu
+bin/check                        # all static checks
+bin/sanitize asan-ubsan          # Address + Undefined Behavior sanitizers
+bin/sanitize tsan                # Thread sanitizer
+bin/coverage                      # LLVM source-based coverage report
+```
+
+`bin/check` requires all three Homebrew packages. The sanitizer commands build and test into dedicated `build/asan-ubsan` and `build/tsan` directories. `bin/coverage` uses the LLVM tools that match the compiler (Xcode’s tools on macOS) and reports coverage for `src/`, excluding tests and system headers.
+
 ## Scan
 
 ```sh

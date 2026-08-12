@@ -1,0 +1,17 @@
+---
+# Keep the initial baseline focused on defects and avoid style-only churn.
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-branch-clone,
+  -bugprone-command-processor,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-empty-catch,
+  -bugprone-exception-escape,
+  -bugprone-infinite-loop,
+  -bugprone-unchecked-optional-access,
+  performance-*
+WarningsAsErrors: ''
+HeaderFilterRegex: '^(src|tests)/'
+FormatStyle: none
+...

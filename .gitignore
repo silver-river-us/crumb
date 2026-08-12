@@ -1,4 +1,6 @@
 /build/
+*.profraw
+*.profdata
 .DS_Store
 .qfile_memory/
 .crumb.index

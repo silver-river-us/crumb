@@ -41,7 +41,7 @@ struct SearchResult {
 };
 
 class SearchManifest {
-public:
+   public:
     SearchManifest(ports::ManifestRepository& manifests, ports::FileSystem& filesystem,
                    ports::SearchIndexRepository* index = nullptr)
         : manifests_(manifests), filesystem_(filesystem), index_(index) {}
@@ -50,9 +50,9 @@ public:
         const domain::DirectoryPath& directory, std::string_view query,
         std::size_t limit = std::numeric_limits<std::size_t>::max()) const;
 
-private:
+   private:
     ports::ManifestRepository& manifests_;
     ports::FileSystem& filesystem_;
     ports::SearchIndexRepository* index_{};
 };
-}
+}  // namespace crumb::application

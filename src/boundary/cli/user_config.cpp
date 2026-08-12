@@ -29,12 +29,24 @@ std::expected<std::string, std::string> parse_string(std::string_view value, std
             return std::unexpected("invalid escape sequence at line " + std::to_string(line));
         }
         switch (value[index]) {
-        case '"': result += '"'; break;
-        case '\\': result += '\\'; break;
-        case 'n': result += '\n'; break;
-        case 'r': result += '\r'; break;
-        case 't': result += '\t'; break;
-        default: return std::unexpected("unsupported escape sequence at line " + std::to_string(line));
+            case '"':
+                result += '"';
+                break;
+            case '\\':
+                result += '\\';
+                break;
+            case 'n':
+                result += '\n';
+                break;
+            case 'r':
+                result += '\r';
+                break;
+            case 't':
+                result += '\t';
+                break;
+            default:
+                return std::unexpected("unsupported escape sequence at line " +
+                                       std::to_string(line));
         }
     }
     return result;
@@ -43,7 +55,8 @@ std::expected<std::string, std::string> parse_string(std::string_view value, std
 bool valid_alias(std::string_view name) {
     if (name.empty()) return false;
     for (const auto character : name) {
-        if (!std::isalnum(static_cast<unsigned char>(character)) && character != '_' && character != '-') {
+        if (!std::isalnum(static_cast<unsigned char>(character)) && character != '_' &&
+            character != '-') {
             return false;
         }
     }
@@ -54,7 +67,7 @@ std::filesystem::path default_home() {
     if (const auto* home = std::getenv("HOME"); home && *home) return home;
     return {};
 }
-}
+}  // namespace
 
 std::expected<UserConfig, std::string> UserConfig::load_default() {
     const auto home = default_home();
@@ -67,7 +80,9 @@ std::expected<UserConfig, std::string> UserConfig::load(const std::filesystem::p
     UserConfig config(home);
     std::error_code error;
     if (!std::filesystem::exists(path, error)) {
-        if (error) return std::unexpected("cannot access configuration file " + path.string() + ": " + error.message());
+        if (error)
+            return std::unexpected("cannot access configuration file " + path.string() + ": " +
+                                   error.message());
         return config;
     }
 
@@ -112,4 +127,4 @@ std::string UserConfig::resolve_directory(std::string_view value) const {
     if (directory.starts_with("~/")) return (home_ / directory.substr(2)).string();
     return directory;
 }
-}
+}  // namespace crumb::boundary

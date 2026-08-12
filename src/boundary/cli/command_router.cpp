@@ -18,6 +18,10 @@
 #include <unistd.h>
 
 namespace crumb::boundary {
+namespace testing {
+PopenFunction popen_function = ::popen;
+}  // namespace testing
+
 namespace {
 
 void print_elapsed(std::ostream& output, std::chrono::microseconds elapsed) {
@@ -45,12 +49,18 @@ std::string shorten(std::string_view value, std::size_t width) {
 std::string relative_result_path(const domain::DirectoryPath& root,
                                  const application::SearchMatch& match) {
     std::error_code error;
+    const bool invalid_path = root.value().find('\0') != std::string::npos ||
+        match.directory.value().find('\0') != std::string::npos ||
+        match.name.value().find('\0') != std::string::npos;
     const auto root_path = std::filesystem::absolute(root.value(), error);
     const auto full_path = std::filesystem::absolute(
         std::filesystem::path(match.directory.value()) / match.name.value(), error);
-    if (error) return (std::filesystem::path(match.directory.value()) / match.name.value()).string();
+    if (invalid_path) error = std::make_error_code(std::errc::invalid_argument);
+    if (error)
+        return (std::filesystem::path(match.directory.value()) / match.name.value()).string();
     const auto relative = std::filesystem::relative(full_path, root_path, error);
-    if (error || relative.empty() || relative.string().starts_with("../")) return full_path.string();
+    if (error || relative.empty() || relative.string().starts_with("../"))
+        return full_path.string();
     return relative.string();
 }
 
@@ -88,14 +98,15 @@ void print_search_table(std::ostream& output, const domain::DirectoryPath& direc
                                       ? clickable_url(value, interactive)
                                       : value;
             table << ' ' << rendered
-                  << std::string(value.size() < widths[index] ? widths[index] - value.size() : 0, ' ')
+                  << std::string(value.size() < widths[index] ? widths[index] - value.size() : 0,
+                                 ' ')
                   << ' ' << '|';
         }
         table << '\n';
     };
 
-    table << "Search results: " << result.matches.size() << " matches in "
-           << directory.value() << '\n';
+    table << "Search results: " << result.matches.size() << " matches in " << directory.value()
+          << '\n';
     rule('-');
     row({"#", "ID", "Name", "Folder", "Score", "Type", "Created", "Edited", "Link"});
     rule('-');
@@ -107,9 +118,13 @@ void print_search_table(std::ostream& output, const domain::DirectoryPath& direc
         row({std::to_string(index + 1), match.file_id.value_or("-"),
              shorten(path.filename().string(), widths[2]),
              shorten(path.parent_path().string(), widths[3]),
-             [&] { std::ostringstream score; score << std::fixed << std::setprecision(4) << match.score; return score.str(); }(),
-             shorten(type, widths[5]), format_date(match.created_ns), format_date(match.modified_ns),
-             match.external_url.value_or("-")});
+             [&] {
+                 std::ostringstream score;
+                 score << std::fixed << std::setprecision(4) << match.score;
+                 return score.str();
+             }(),
+             shorten(type, widths[5]), format_date(match.created_ns),
+             format_date(match.modified_ns), match.external_url.value_or("-")});
     }
     rule('-');
     const auto rendered = table.str();
@@ -117,7 +132,7 @@ void print_search_table(std::ostream& output, const domain::DirectoryPath& direc
         output << rendered;
         return;
     }
-    if (FILE* pager = ::popen("less -SRFX", "w")) {
+    if (FILE* pager = testing::popen_function("less -SRFX", "w")) {
         (void)::fwrite(rendered.data(), 1, rendered.size(), pager);
         (void)::pclose(pager);
         return;
@@ -128,13 +143,14 @@ void print_search_table(std::ostream& output, const domain::DirectoryPath& direc
 void print_search_details(std::ostream& output, const domain::DirectoryPath& directory,
                           const application::SearchResult& result) {
     const bool interactive = ::isatty(STDOUT_FILENO) == 1;
-    output << "Search results: " << result.matches.size() << " matches in "
-           << directory.value() << '\n';
+    output << "Search results: " << result.matches.size() << " matches in " << directory.value()
+           << '\n';
     for (std::size_t index = 0; index < result.matches.size(); ++index) {
         const auto& match = result.matches[index];
         const auto path = std::filesystem::path(match.directory.value()) / match.name.value();
         const auto type = match.type.empty() ? path.extension().string() : match.type;
-        output << '\n' << '[' << index + 1 << "] " << match.name.value() << '\n'
+        output << '\n'
+               << '[' << index + 1 << "] " << match.name.value() << '\n'
                << "  id:     " << match.file_id.value_or("-") << '\n'
                << "  path:   " << path.string() << '\n'
                << "  folder: " << path.parent_path().string() << '\n'
@@ -149,7 +165,14 @@ void print_search_details(std::ostream& output, const domain::DirectoryPath& dir
         }
     }
 }
+}  // namespace
+
+namespace testing {
+std::string relative_result_path_for_test(const application::SearchMatch& match,
+                                          const domain::DirectoryPath& root) {
+    return relative_result_path(root, match);
 }
+}  // namespace testing
 
 int CommandRouter::run(int argc, char** argv) const {
     const std::string command = argc > 1 ? argv[1] : "scan";
@@ -157,11 +180,12 @@ int CommandRouter::run(int argc, char** argv) const {
     const bool index_size_command = command == "index_size";
     const bool drive_index_command = command == "index";
     if (command != "scan" && !search_command && !index_size_command && !drive_index_command) {
-        std::cerr << "usage: crumb scan [DIRECTORY]\n"
-                     "       crumb index drive [PATH]\n"
-                     "       crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] [--tap [html]]\n"
-                     "       crumb search drive QUERY [--limit N] [--full|--table] [--tap [html]]\n"
-                     "       crumb index_size [DIRECTORY]\n";
+        std::cerr
+            << "usage: crumb scan [DIRECTORY]\n"
+               "       crumb index drive [PATH]\n"
+               "       crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] [--tap [html]]\n"
+               "       crumb search drive QUERY [--limit N] [--full|--table] [--tap [html]]\n"
+               "       crumb index_size [DIRECTORY]\n";
         return 2;
     }
 
@@ -175,9 +199,8 @@ int CommandRouter::run(int argc, char** argv) const {
             std::cerr << "usage: crumb index drive [PATH]\n";
             return 2;
         }
-        const std::optional<std::string_view> requested_path = argc == 4
-                                                                    ? std::optional<std::string_view>(argv[3])
-                                                                    : std::nullopt;
+        const std::optional<std::string_view> requested_path =
+            argc == 4 ? std::optional<std::string_view>(argv[3]) : std::nullopt;
         auto result = drive_.index(requested_path);
         if (!result) {
             std::cerr << "crumb: " << result.error() << '\n';
@@ -192,7 +215,8 @@ int CommandRouter::run(int argc, char** argv) const {
     }
 
     if (search_command && argc < 3) {
-        std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] [--tap [html]]\n";
+        std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] [--tap "
+                     "[html]]\n";
         return 2;
     }
 
@@ -232,13 +256,15 @@ int CommandRouter::run(int argc, char** argv) const {
                     tap_format = TapFormat::text;
                     continue;
                 }
-                std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] [--tap [html]]\n";
+                std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] "
+                             "[--tap [html]]\n";
                 return 2;
             }
             std::string_view limit_value;
             if (argument == "--limit") {
                 if (index + 1 >= argc) {
-                    std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] [--tap [html]]\n";
+                    std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] "
+                                 "[--full|--table] [--tap [html]]\n";
                     return 2;
                 }
                 limit_value = argv[++index];
@@ -247,7 +273,8 @@ int CommandRouter::run(int argc, char** argv) const {
             }
             if (!limit_value.empty() || argument == "--limit=") {
                 const auto value = limit_value;
-                const auto parsed = std::from_chars(value.data(), value.data() + value.size(), limit);
+                const auto parsed =
+                    std::from_chars(value.data(), value.data() + value.size(), limit);
                 if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size()) {
                     std::cerr << "crumb: limit must be a nonnegative integer\n";
                     return 2;
@@ -257,20 +284,24 @@ int CommandRouter::run(int argc, char** argv) const {
             search_positionals.push_back(argument);
         }
         if (search_positionals.size() < 1 || search_positionals.size() > 2) {
-            std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] [--tap [html]]\n";
+            std::cerr << "usage: crumb search [DIRECTORY] QUERY [--limit N] [--full|--table] "
+                         "[--tap [html]]\n";
             return 2;
         }
     }
-    const bool drive_search = search_command && search_positionals.size() == 2 &&
-                              search_positionals[0] == "drive";
-    const bool explicit_directory = search_command && search_positionals.size() == 2 && !drive_search;
-    const std::string directory_value = drive_search
-                                            ? "."
-                                            : config_.resolve_directory(search_command
-                                                                            ? (explicit_directory ? search_positionals[0] : ".")
-                                                                            : (argc > 2 ? std::string_view(argv[2]) : "."));
+    const bool drive_search =
+        search_command && search_positionals.size() == 2 && search_positionals[0] == "drive";
+    const bool explicit_directory =
+        search_command && search_positionals.size() == 2 && !drive_search;
+    const std::string directory_value =
+        drive_search
+            ? "."
+            : config_.resolve_directory(search_command
+                                            ? (explicit_directory ? search_positionals[0] : ".")
+                                            : (argc > 2 ? std::string_view(argv[2]) : "."));
     auto directory = domain::DirectoryPath::create(directory_value);
-    const auto query = search_command ? (drive_search ? search_positionals[1] : search_positionals.back()) : "";
+    const auto query =
+        search_command ? (drive_search ? search_positionals[1] : search_positionals.back()) : "";
 
     if (drive_search) {
         auto resolved = drive_.resolve();
@@ -289,8 +320,7 @@ int CommandRouter::run(int argc, char** argv) const {
             std::cerr << "crumb: " << result.error() << '\n';
             return 1;
         }
-        std::cout << "directory=" << directory.value()
-                  << " index_size_bytes=" << *result << '\n';
+        std::cout << "directory=" << directory.value() << " index_size_bytes=" << *result << '\n';
         return 0;
     }
 
@@ -307,10 +337,8 @@ int CommandRouter::run(int argc, char** argv) const {
         }
         const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::steady_clock::now() - timer_started);
-        std::cout << "directory=" << directory.value()
-                  << " scanned=" << result->scanned
-                  << " added=" << result->added
-                  << " updated=" << result->updated
+        std::cout << "directory=" << directory.value() << " scanned=" << result->scanned
+                  << " added=" << result->added << " updated=" << result->updated
                   << " removed=" << result->removed;
         print_elapsed(std::cout, elapsed);
         std::cout << '\n';
@@ -329,10 +357,11 @@ int CommandRouter::run(int argc, char** argv) const {
     }
     const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::steady_clock::now() - timer_started);
-    if (full_results) print_search_details(std::cout, directory, *result);
-    else print_search_table(std::cout, directory, *result, true);
-    std::cout << "directory=" << directory.value()
-              << " inspected=" << result->inspected
+    if (full_results)
+        print_search_details(std::cout, directory, *result);
+    else
+        print_search_table(std::cout, directory, *result, true);
+    std::cout << "directory=" << directory.value() << " inspected=" << result->inspected
               << " matches=" << result->matches.size();
     print_elapsed(std::cout, elapsed);
     std::cout << '\n';
@@ -341,4 +370,4 @@ int CommandRouter::run(int argc, char** argv) const {
     }
     return 0;
 }
-}
+}  // namespace crumb::boundary

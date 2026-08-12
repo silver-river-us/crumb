@@ -4,9 +4,10 @@
 #include <string_view>
 namespace crumb::infrastructure {
 class TomlManifestMapper {
-public:
+   public:
     std::expected<domain::DirectoryManifest, std::string> fromToml(std::string_view input) const;
-    std::expected<domain::DirectoryManifest, std::string> fromToml(std::string_view input, const domain::DirectoryPath& path) const;
+    std::expected<domain::DirectoryManifest, std::string> fromToml(
+        std::string_view input, const domain::DirectoryPath& path) const;
     std::string toToml(const domain::DirectoryManifest& manifest) const;
 };
-}
+}  // namespace crumb::infrastructure

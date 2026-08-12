@@ -7,9 +7,10 @@
 
 namespace crumb::ports {
 class MetadataExtractor {
-public:
+   public:
     virtual ~MetadataExtractor() = default;
-    virtual std::expected<domain::FileMetadata, std::string> extract(
-        const domain::DirectoryPath&, const domain::FileName&, domain::FileMetadata base) = 0;
+    virtual std::expected<domain::FileMetadata, std::string> extract(const domain::DirectoryPath&,
+                                                                     const domain::FileName&,
+                                                                     domain::FileMetadata base) = 0;
 };
-}
+}  // namespace crumb::ports

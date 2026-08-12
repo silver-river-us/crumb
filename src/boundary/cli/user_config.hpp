@@ -8,17 +8,17 @@
 
 namespace crumb::boundary {
 class UserConfig {
-public:
+   public:
     static std::expected<UserConfig, std::string> load_default();
     static std::expected<UserConfig, std::string> load(const std::filesystem::path& path,
                                                        const std::filesystem::path& home);
 
     std::string resolve_directory(std::string_view value) const;
 
-private:
+   private:
     explicit UserConfig(std::filesystem::path home) : home_(std::move(home)) {}
 
     std::filesystem::path home_;
     std::unordered_map<std::string, std::string> aliases_;
 };
-}
+}  // namespace crumb::boundary
