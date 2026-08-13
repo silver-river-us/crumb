@@ -44,6 +44,43 @@ jobs:
       - name: Run tests
         run: ctest --preset default
 
+  static-memory-analysis:
+    name: Static memory ownership analysis
+    runs-on: ubuntu-latest
+    env:
+      CXX: clang++
+      CXXFLAGS: -stdlib=libc++
+      LDFLAGS: -stdlib=libc++
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Clang Static Analyzer
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang clang-tools perl cmake ninja-build zlib1g-dev libc++-dev libc++abi-dev
+
+      - name: Configure
+        # Configure through scan-build so CMake records its analyzer compiler
+        # wrapper; wrapping only an already-configured CMake build can miss it.
+        run: >-
+          scan-build --status-bugs
+          -enable-checker cplusplus.NewDeleteLeaks
+          -enable-checker unix.Malloc
+          -enable-checker unix.MismatchedDeallocator
+          --use-cc clang --use-c++ clang++
+          cmake --preset default -G Ninja
+          -D CMAKE_CXX_FLAGS=-stdlib=libc++
+          -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
+
+      - name: Analyze memory ownership and leak paths
+        run: >-
+          scan-build --status-bugs
+          -enable-checker cplusplus.NewDeleteLeaks
+          -enable-checker unix.Malloc
+          -enable-checker unix.MismatchedDeallocator
+          --use-cc clang --use-c++ clang++
+          cmake --build --preset default
+
   address-and-undefined-sanitizers:
     name: Memory safety (ASan + UBSan)
     runs-on: ubuntu-latest

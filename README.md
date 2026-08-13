@@ -38,6 +38,8 @@ bin/coverage                      # LLVM source-based coverage report
 
 The CI sanitizer jobs have focused purposes: AddressSanitizer (ASan) detects memory errors, UndefinedBehaviorSanitizer (UBSan) detects invalid C++ operations, and ThreadSanitizer (TSan) detects data races and other threading errors.
 
+The CI also runs Clang Static Analyzer for path-sensitive memory ownership and leak checks. It complements the runtime ASan/LeakSanitizer checks: the static analyzer examines possible paths without running the program, while sanitizers verify behavior during tests.
+
 ## Scan
 
 ```sh
