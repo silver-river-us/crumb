@@ -216,12 +216,32 @@ int main() {
     assert(!relaxed_match->matches.empty());
 
     SearchIndexBuilder path_builder;
-    path_builder.add(DirectoryPath::create("Shared drives/Internal Docs/Contracts"),
+    path_builder.add(
+        DirectoryPath::create(
+            "Shared drives/Internal Docs/Finances/Active clients/Digital Iron/Contracts & NDA"),
+        repository.manifest->files().front());
+    path_builder.add(DirectoryPath::create("Shared drives/Internal Docs/Finances/Closed "
+                                           "accounts/GSE/Documents & Contracts/Contracts"),
                      repository.manifest->files().front());
-    auto path_index = std::move(path_builder).build();
-    auto path_query = SearchQuery::create("internal docs contracts");
+    const auto path_index = std::move(path_builder).build();
+    auto path_query = SearchQuery::create("internal documents contracts digital iron");
     assert(path_query.has_value());
     assert(path_index.search(*path_query).size() == 1);
+
+    SearchIndexBuilder ranking_builder;
+    ranking_builder.add(
+        DirectoryPath::create(
+            "Shared drives/Internal Docs/Finances/Active clients/Digital/Contracts"),
+        repository.manifest->files().front());
+    ranking_builder.add(
+        DirectoryPath::create(
+            "Shared drives/Internal Docs/Finances/Active clients/Digital Iron/Contracts"),
+        repository.manifest->files().front());
+    const auto ranking_index = std::move(ranking_builder).build();
+    const auto ranked_matches = ranking_index.search_relaxed(*path_query);
+    assert(ranked_matches.size() == 2);
+    assert(ranked_matches.front().document_id == 1);
+    assert(ranked_matches.front().score > ranked_matches.back().score);
 
     SearchIndexBuilder conjunction_builder;
     conjunction_builder.add(directory, repository.manifest->files()[0]);
