@@ -19,7 +19,7 @@ namespace {
 FILE* fail_popen(const char*, const char*) { return nullptr; }
 
 struct Result {
-    int status;
+    int status{};
     std::string output;
     std::string error;
 };
@@ -27,6 +27,7 @@ struct Result {
 Result run(crumb::boundary::CommandRouter& router, std::initializer_list<std::string> arguments) {
     std::vector<std::string> values(arguments);
     std::vector<char*> argv;
+    argv.reserve(values.size());
     for (auto& value : values) argv.push_back(value.data());
     std::ostringstream output;
     std::ostringstream error;
@@ -173,148 +174,168 @@ std::filesystem::path temp_root() {
 }  // namespace
 
 int main() {
-    const auto root = temp_root();
-    std::ofstream(root / "technical proposal.md") << "technical proposal";
-    std::ofstream(root / "this-is-a-very-long-file-name-that-needs-to-be-shortened-for-display.txt")
-        << "long technical proposal";
-    std::filesystem::create_directories(root / "nested");
-    std::ofstream(root / "nested" / "annual.txt") << "annual technical proposal";
-    const auto old_current = std::filesystem::current_path();
-    std::filesystem::current_path(root);
+    try {
+        const auto root = temp_root();
+        std::ofstream(root / "technical proposal.md") << "technical proposal";
+        std::ofstream(root /
+                      "this-is-a-very-long-file-name-that-needs-to-be-shortened-for-display.txt")
+            << "long technical proposal";
+        std::filesystem::create_directories(root / "nested");
+        std::ofstream(root / "nested" / "annual.txt") << "annual technical proposal";
+        const auto old_current = std::filesystem::current_path();
+        std::filesystem::current_path(root);
 
-    crumb::infrastructure::ApplicationComponents components;
-    auto config = crumb::boundary::UserConfig::load(root / "missing.conf", root);
-    assert(config.has_value());
-    crumb::boundary::CommandRouter router(components.reconcile, components.rebuild_index,
-                                          components.search, components.index_size,
-                                          components.drive, *config);
+        crumb::infrastructure::ApplicationComponents components;
+        auto config = crumb::boundary::UserConfig::load(root / "missing.conf", root);
+        assert(config.has_value());
+        crumb::boundary::CommandRouter router(components.reconcile, components.rebuild_index,
+                                              components.search, components.index_size,
+                                              components.drive, *config);
 
-    auto unknown = run(router, {"crumb", "unknown"});
-    assert(unknown.status == 2 && unknown.error.find("usage:") != std::string::npos);
-    const auto invalid_match = crumb::application::SearchMatch{
-        crumb::domain::DirectoryPath::create(std::string("bad\0directory", 13)),
-        crumb::domain::FileName::create("file.txt")};
-    assert(!crumb::boundary::testing::relative_result_path_for_test(
-                invalid_match, crumb::domain::DirectoryPath::create("."))
-                .empty());
-    auto index_size_usage = run(router, {"crumb", "index_size", ".", "extra"});
-    assert(index_size_usage.status == 2);
-    auto missing_index = run(router, {"crumb", "index_size", "."});
-    assert(missing_index.status == 1 && missing_index.error.find("crumb:") != std::string::npos);
-    auto bad_scan = run(router, {"crumb", "scan", (root / "missing").string()});
-    assert(bad_scan.status == 1);
-    auto no_search_args = run(router, {"crumb", "search"});
-    assert(no_search_args.status == 2);
-    auto bad_tap = run(router, {"crumb", "search", "technical", "--tap=xml"});
-    assert(bad_tap.status == 2);
-    auto missing_limit = run(router, {"crumb", "search", "technical", "--limit"});
-    assert(missing_limit.status == 2);
-    auto bad_limit = run(router, {"crumb", "search", "technical", "--limit=nope"});
-    assert(bad_limit.status == 2);
-    auto empty_limit = run(router, {"crumb", "search", "technical", "--limit="});
-    assert(empty_limit.status == 2);
-    auto too_many = run(router, {"crumb", "search", "one", "two", "three"});
-    assert(too_many.status == 2);
-    auto bad_query = run(router, {"crumb", "search", "a"});
-    assert(bad_query.status == 1);
+        auto unknown = run(router, {"crumb", "unknown"});
+        assert(unknown.status == 2 && unknown.error.find("usage:") != std::string::npos);
+        const auto invalid_match = crumb::application::SearchMatch{
+            crumb::domain::DirectoryPath::create(std::string("bad\0directory", 13)),
+            crumb::domain::FileName::create("file.txt"),
+            0.0,
+            "",
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt};
+        assert(!crumb::boundary::testing::relative_result_path_for_test(
+                    invalid_match, crumb::domain::DirectoryPath::create("."))
+                    .empty());
+        auto index_size_usage = run(router, {"crumb", "index_size", ".", "extra"});
+        assert(index_size_usage.status == 2);
+        auto missing_index = run(router, {"crumb", "index_size", "."});
+        assert(missing_index.status == 1 &&
+               missing_index.error.find("crumb:") != std::string::npos);
+        auto bad_scan = run(router, {"crumb", "scan", (root / "missing").string()});
+        assert(bad_scan.status == 1);
+        auto no_search_args = run(router, {"crumb", "search"});
+        assert(no_search_args.status == 2);
+        auto bad_tap = run(router, {"crumb", "search", "technical", "--tap=xml"});
+        assert(bad_tap.status == 2);
+        auto missing_limit = run(router, {"crumb", "search", "technical", "--limit"});
+        assert(missing_limit.status == 2);
+        auto bad_limit = run(router, {"crumb", "search", "technical", "--limit=nope"});
+        assert(bad_limit.status == 2);
+        auto empty_limit = run(router, {"crumb", "search", "technical", "--limit="});
+        assert(empty_limit.status == 2);
+        auto too_many = run(router, {"crumb", "search", "one", "two", "three"});
+        assert(too_many.status == 2);
+        auto bad_query = run(router, {"crumb", "search", "a"});
+        assert(bad_query.status == 1);
 
-    auto scan = run(router, {"crumb", "scan", "."});
-    assert(scan.status == 0 && scan.output.find("scanned=") != std::string::npos);
-    auto size = run(router, {"crumb", "index_size"});
-    assert(size.status == 0 && size.output.find("index_size_bytes=") != std::string::npos);
-    auto loaded_manifest =
-        components.manifests.load(crumb::domain::DirectoryPath::create(root.string()));
-    assert(loaded_manifest.has_value() && loaded_manifest->has_value());
-    for (auto& file : loaded_manifest->value().files()) {
-        file.metadata.external_url = "https://example.test/item";
-        file.metadata.author = "Author";
+        auto scan = run(router, {"crumb", "scan", "."});
+        assert(scan.status == 0 && scan.output.find("scanned=") != std::string::npos);
+        auto size = run(router, {"crumb", "index_size"});
+        assert(size.status == 0 && size.output.find("index_size_bytes=") != std::string::npos);
+        auto loaded_manifest =
+            components.manifests.load(crumb::domain::DirectoryPath::create(root.string()));
+        assert(loaded_manifest.has_value() && loaded_manifest->has_value());
+        for (auto& file : loaded_manifest->value().files()) {
+            file.metadata.external_url = "https://example.test/item";
+            file.metadata.author = "Author";
+        }
+        const auto saved_manifest = components.manifests.save(loaded_manifest->value());
+        assert(saved_manifest);
+        std::filesystem::remove(root / ".crumb.index");
+        auto full = run(router, {"crumb", "search", ".", "technical", "--limit", "1", "--details",
+                                 "--tap=text"});
+        assert(full.status == 0 && full.output.find("Search results:") != std::string::npos &&
+               full.output.find("tap query=") != std::string::npos);
+        auto table = run(router, {"crumb", "search", "technical", "--table", "--tap"});
+        assert(table.status == 0 && table.output.find("| Name") != std::string::npos);
+        auto html = run(router, {"crumb", "search", "technical", "--tap", "html"});
+        assert(html.status == 0 && html.output.find("<!doctype html>") != std::string::npos);
+        auto tap_equals_html = run(router, {"crumb", "search", "technical", "--tap=html"});
+        assert(tap_equals_html.status == 0 &&
+               tap_equals_html.output.find("<!doctype html>") != std::string::npos);
+        run_interactive_table(router, root);
+
+        setenv("XDG_CACHE_HOME", (root / "cache").c_str(), 1);
+        setenv("HOME", (root / "home").c_str(), 1);
+        std::filesystem::create_directories(root / "home" / "Library" / "CloudStorage" /
+                                            "GoogleDrive-test");
+        auto bad_index = run(router, {"crumb", "index", "wrong"});
+        assert(bad_index.status == 2);
+        auto missing_drive = run(router, {"crumb", "index", "drive", (root / "missing").string()});
+        assert(missing_drive.status == 1);
+        auto drive_index = run(router, {"crumb", "index", "drive", root.string()});
+        assert(drive_index.status == 0 &&
+               drive_index.output.find("source=drive") != std::string::npos);
+        auto drive_search = run(router, {"crumb", "search", "drive", "technical", "--limit=1"});
+        assert(drive_search.status == 0);
+        unsetenv("HOME");
+        auto drive_no_mount = run(router, {"crumb", "search", "drive", "technical"});
+        assert(drive_no_mount.status == 1);
+
+        FakeManifestRepository fake_manifests;
+        FakeFileSystem fake_filesystem;
+        FakeFingerprint fake_fingerprints;
+        FakeExtractor fake_extractor;
+        FakeIds fake_ids;
+        FakeClock fake_clock;
+        FailingIndex failing_index;
+        crumb::infrastructure::NativeFileSystem fake_native;
+        crumb::plugins::google_drive::GoogleDrivePlugin fake_drive(
+            fake_native, fake_manifests, failing_index, fake_fingerprints, fake_ids, fake_clock);
+        crumb::application::ReconcileDirectory fake_reconcile(fake_manifests, fake_filesystem,
+                                                              fake_fingerprints, fake_extractor,
+                                                              fake_ids, fake_clock);
+        crumb::application::RebuildSearchIndex fake_rebuild(fake_manifests, fake_filesystem,
+                                                            failing_index);
+        crumb::application::SearchManifest fake_search(fake_manifests, fake_filesystem,
+                                                       &failing_index);
+        crumb::application::IndexSize fake_size(failing_index);
+        crumb::boundary::CommandRouter failing_router(fake_reconcile, fake_rebuild, fake_search,
+                                                      fake_size, fake_drive, *config);
+        auto rebuild_failure = run(failing_router, {"crumb", "scan", root.string()});
+        assert(rebuild_failure.status == 1 &&
+               rebuild_failure.error.find("save failed") != std::string::npos);
+
+        auto outside_manifest = crumb::domain::DirectoryManifest::create(
+            crumb::domain::DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"),
+            crumb::domain::DirectoryPath::create("/tmp/outside"));
+        crumb::domain::FileMetadata outside_metadata;
+        outside_metadata.type = "text/plain";
+        outside_metadata.external_url = "https://example.test/outside";
+        outside_metadata.extension_fields["search"] = "outside";
+        outside_manifest.add({crumb::domain::FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"),
+                              crumb::domain::FileName::create("outside.txt"), outside_metadata,
+                              crumb::domain::Fingerprint::create("test:outside")});
+        fake_manifests.value = outside_manifest;
+        fake_filesystem.directories = {crumb::domain::DirectoryPath::create("/tmp/outside")};
+        auto outside =
+            run(failing_router, {"crumb", "search", root.string(), "outside", "--table"});
+        assert(outside.status == 0 && outside.output.find("outside.txt") != std::string::npos);
+
+        const auto invalid_directory =
+            crumb::domain::DirectoryPath::create(std::string("bad\0root", 8));
+        auto invalid_manifest = crumb::domain::DirectoryManifest::create(
+            crumb::domain::DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"), invalid_directory);
+        invalid_manifest.add({crumb::domain::FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"),
+                              crumb::domain::FileName::create("outside.txt"), outside_metadata,
+                              crumb::domain::Fingerprint::create("test:outside")});
+        fake_manifests.value = invalid_manifest;
+        fake_filesystem.directories = {invalid_directory};
+        auto invalid_path =
+            run(failing_router, {"crumb", "search", root.string(), "outside", "--table"});
+        assert(invalid_path.status == 0);
+
+        const auto executable = std::filesystem::absolute("build/coverage/crumb");
+        const auto command_status = std::system(
+            ("env -u HOME " + executable.string() + " scan . >/dev/null 2>/dev/null").c_str());
+        assert(command_status != 0);
+
+        std::filesystem::current_path(old_current);
+        std::filesystem::remove_all(root);
+    } catch (...) {
+        return 1;
     }
-    assert(components.manifests.save(loaded_manifest->value()));
-    std::filesystem::remove(root / ".crumb.index");
-    auto full = run(
-        router, {"crumb", "search", ".", "technical", "--limit", "1", "--details", "--tap=text"});
-    assert(full.status == 0 && full.output.find("Search results:") != std::string::npos &&
-           full.output.find("tap query=") != std::string::npos);
-    auto table = run(router, {"crumb", "search", "technical", "--table", "--tap"});
-    assert(table.status == 0 && table.output.find("| Name") != std::string::npos);
-    auto html = run(router, {"crumb", "search", "technical", "--tap", "html"});
-    assert(html.status == 0 && html.output.find("<!doctype html>") != std::string::npos);
-    auto tap_equals_html = run(router, {"crumb", "search", "technical", "--tap=html"});
-    assert(tap_equals_html.status == 0 &&
-           tap_equals_html.output.find("<!doctype html>") != std::string::npos);
-    run_interactive_table(router, root);
-
-    setenv("XDG_CACHE_HOME", (root / "cache").c_str(), 1);
-    setenv("HOME", (root / "home").c_str(), 1);
-    std::filesystem::create_directories(root / "home" / "Library" / "CloudStorage" /
-                                        "GoogleDrive-test");
-    auto bad_index = run(router, {"crumb", "index", "wrong"});
-    assert(bad_index.status == 2);
-    auto missing_drive = run(router, {"crumb", "index", "drive", (root / "missing").string()});
-    assert(missing_drive.status == 1);
-    auto drive_index = run(router, {"crumb", "index", "drive", root.string()});
-    assert(drive_index.status == 0 && drive_index.output.find("source=drive") != std::string::npos);
-    auto drive_search = run(router, {"crumb", "search", "drive", "technical", "--limit=1"});
-    assert(drive_search.status == 0);
-    unsetenv("HOME");
-    auto drive_no_mount = run(router, {"crumb", "search", "drive", "technical"});
-    assert(drive_no_mount.status == 1);
-
-    FakeManifestRepository fake_manifests;
-    FakeFileSystem fake_filesystem;
-    FakeFingerprint fake_fingerprints;
-    FakeExtractor fake_extractor;
-    FakeIds fake_ids;
-    FakeClock fake_clock;
-    FailingIndex failing_index;
-    crumb::infrastructure::NativeFileSystem fake_native;
-    crumb::plugins::google_drive::GoogleDrivePlugin fake_drive(
-        fake_native, fake_manifests, failing_index, fake_fingerprints, fake_ids, fake_clock);
-    crumb::application::ReconcileDirectory fake_reconcile(
-        fake_manifests, fake_filesystem, fake_fingerprints, fake_extractor, fake_ids, fake_clock);
-    crumb::application::RebuildSearchIndex fake_rebuild(fake_manifests, fake_filesystem,
-                                                        failing_index);
-    crumb::application::SearchManifest fake_search(fake_manifests, fake_filesystem, &failing_index);
-    crumb::application::IndexSize fake_size(failing_index);
-    crumb::boundary::CommandRouter failing_router(fake_reconcile, fake_rebuild, fake_search,
-                                                  fake_size, fake_drive, *config);
-    auto rebuild_failure = run(failing_router, {"crumb", "scan", root.string()});
-    assert(rebuild_failure.status == 1 &&
-           rebuild_failure.error.find("save failed") != std::string::npos);
-
-    auto outside_manifest = crumb::domain::DirectoryManifest::create(
-        crumb::domain::DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"),
-        crumb::domain::DirectoryPath::create("/tmp/outside"));
-    crumb::domain::FileMetadata outside_metadata;
-    outside_metadata.type = "text/plain";
-    outside_metadata.external_url = "https://example.test/outside";
-    outside_metadata.extension_fields["search"] = "outside";
-    outside_manifest.add({crumb::domain::FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"),
-                          crumb::domain::FileName::create("outside.txt"), outside_metadata,
-                          crumb::domain::Fingerprint::create("test:outside")});
-    fake_manifests.value = outside_manifest;
-    fake_filesystem.directories = {crumb::domain::DirectoryPath::create("/tmp/outside")};
-    auto outside = run(failing_router, {"crumb", "search", root.string(), "outside", "--table"});
-    assert(outside.status == 0 && outside.output.find("outside.txt") != std::string::npos);
-
-    const auto invalid_directory =
-        crumb::domain::DirectoryPath::create(std::string("bad\0root", 8));
-    auto invalid_manifest = crumb::domain::DirectoryManifest::create(
-        crumb::domain::DirectoryId::create("01K1AB5YZ4QH7M2D8E3F9G6JNX"), invalid_directory);
-    invalid_manifest.add({crumb::domain::FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"),
-                          crumb::domain::FileName::create("outside.txt"), outside_metadata,
-                          crumb::domain::Fingerprint::create("test:outside")});
-    fake_manifests.value = invalid_manifest;
-    fake_filesystem.directories = {invalid_directory};
-    auto invalid_path =
-        run(failing_router, {"crumb", "search", root.string(), "outside", "--table"});
-    assert(invalid_path.status == 0);
-
-    const auto executable = std::filesystem::absolute("build/coverage/crumb");
-    assert(std::system(
-               ("env -u HOME " + executable.string() + " scan . >/dev/null 2>/dev/null").c_str()) !=
-           0);
-
-    std::filesystem::current_path(old_current);
-    std::filesystem::remove_all(root);
+    return 0;
 }

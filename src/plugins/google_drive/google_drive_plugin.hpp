@@ -5,6 +5,7 @@
 #include "application/search_manifest.hpp"
 #include "infrastructure/filesystem/native_filesystem.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <expected>
@@ -23,6 +24,9 @@ using PipeFunction = int (*)(int*);
 using ForkFunction = pid_t (*)();
 extern PipeFunction pipe_function;
 extern ForkFunction fork_process;
+std::optional<std::string> command_output_for_test(const std::string& command, std::size_t limit,
+                                                   std::chrono::milliseconds timeout);
+std::optional<std::string> extract_office_text_for_test(const std::filesystem::path& path);
 }  // namespace testing
 
 class DriveManifestRepository final : public ports::ManifestRepository {

@@ -9,8 +9,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <iterator>
-#include <sstream>
+
 #include <string>
 #include <sys/stat.h>
 #include <tuple>
@@ -108,7 +107,8 @@ void binary_repository_tests(const std::filesystem::path& root) {
     domain::SearchIndexBuilder builder;
     builder.add(domain::DirectoryPath::create(root.string()), manifest.files().front());
     auto original = std::move(builder).build();
-    assert(repository.save(domain::DirectoryPath::create(root.string()), original));
+    const auto saved = repository.save(domain::DirectoryPath::create(root.string()), original);
+    assert(saved);
     assert(repository.size(domain::DirectoryPath::create(root.string())).value() > 4);
     auto loaded = repository.load(domain::DirectoryPath::create(root.string()));
     assert(loaded.has_value());
@@ -120,7 +120,9 @@ void binary_repository_tests(const std::filesystem::path& root) {
     assert(!repository.load(domain::DirectoryPath::create((root / "missing").string())));
     std::filesystem::remove(root / ".crumb.index");
     std::filesystem::create_directories(root / ".crumb.index");
-    assert(!repository.save(domain::DirectoryPath::create(root.string()), original));
+    const auto failed_save =
+        repository.save(domain::DirectoryPath::create(root.string()), original);
+    assert(!failed_save);
     std::filesystem::remove_all(root / ".crumb.index");
 
     const auto index_path = root / ".crumb.index";
@@ -281,7 +283,7 @@ void binary_repository_tests(const std::filesystem::path& root) {
     replace(bad_compression);
     assert(!repository.load(domain::DirectoryPath::create(root.string())));
 
-    for (const auto [magic, modified, file_ids] : std::vector<std::tuple<std::string, bool, bool>>{
+    for (const auto& [magic, modified, file_ids] : std::vector<std::tuple<std::string, bool, bool>>{
              {"CRZ5", true, true}, {"CRZ4", true, false}, {"CRZ3", false, false}}) {
         write_index_file(index_path, magic, valid_payload(modified, file_ids));
         auto old = repository.load(domain::DirectoryPath::create(root.string()));
@@ -323,16 +325,18 @@ void native_and_hash_tests(const std::filesystem::path& root) {
     auto dirs = filesystem.list_directories_recursive(domain::DirectoryPath::create(root.string()));
     assert(dirs.has_value());
     assert(dirs->size() == 2);
-    assert(
-        !filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string())));
-    assert(!filesystem.list_regular_files_recursive(
-        domain::DirectoryPath::create((root / "missing").string())));
-    assert(!filesystem.list_directories_recursive(
-        domain::DirectoryPath::create((root / "missing").string())));
-    assert(filesystem
-               .read_text_file(domain::DirectoryPath::create(root.string()),
-                               domain::FileName::create("b.txt"))
-               ->value() == "Hello, hello!");
+    const auto missing_files =
+        filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string()));
+    assert(!missing_files);
+    const auto missing_recursive = filesystem.list_regular_files_recursive(
+        domain::DirectoryPath::create((root / "missing").string()));
+    assert(!missing_recursive);
+    const auto missing_directories = filesystem.list_directories_recursive(
+        domain::DirectoryPath::create((root / "missing").string()));
+    assert(!missing_directories);
+    const auto text = filesystem.read_text_file(domain::DirectoryPath::create(root.string()),
+                                                domain::FileName::create("b.txt"));
+    assert(text->value() == "Hello, hello!");
     auto binary = filesystem.read_text_file(domain::DirectoryPath::create(root.string()),
                                             domain::FileName::create("unknown.bin"));
     assert(binary.has_value() && !binary->has_value());
@@ -340,7 +344,9 @@ void native_and_hash_tests(const std::filesystem::path& root) {
                                              domain::FileName::create("missing.txt"));
     assert(missing.has_value() && !missing->has_value());
     const auto invalid_name = domain::FileName::create(std::string(5000, 'x'));
-    assert(!filesystem.read_text_file(domain::DirectoryPath::create(root.string()), invalid_name));
+    const auto invalid_text =
+        filesystem.read_text_file(domain::DirectoryPath::create(root.string()), invalid_name);
+    assert(!invalid_text);
     auto extracted = filesystem.extract(domain::DirectoryPath::create(root.string()),
                                         domain::FileName::create("a.md"), {});
     assert(extracted.has_value());
@@ -352,12 +358,13 @@ void native_and_hash_tests(const std::filesystem::path& root) {
     assert(binary_extract.has_value());
     assert(binary_extract->extension_fields.empty());
 
-    assert(hashes.fingerprint(domain::DirectoryPath::create("."), domain::FileName::create("b.txt"))
-               .has_value());
+    const auto fingerprint =
+        hashes.fingerprint(domain::DirectoryPath::create("."), domain::FileName::create("b.txt"));
+    assert(fingerprint.has_value());
     assert(hashes.fingerprint_path(root / "b.txt").has_value());
-    assert(
-        hashes.content_hash(domain::DirectoryPath::create("."), domain::FileName::create("b.txt"))
-            .has_value());
+    const auto content_hash =
+        hashes.content_hash(domain::DirectoryPath::create("."), domain::FileName::create("b.txt"));
+    assert(content_hash.has_value());
     assert(!hashes.fingerprint_path(root / "missing").has_value());
 }
 
@@ -368,7 +375,8 @@ void toml_repository_tests(const std::filesystem::path& root) {
     const auto path = domain::DirectoryPath::create(toml_root.string());
     auto missing = repository.load(path);
     assert(missing.has_value() && !missing.value());
-    assert(repository.save(manifest_at(toml_root)));
+    const auto saved = repository.save(manifest_at(toml_root));
+    assert(saved);
     auto loaded = repository.load(path);
     assert(loaded.has_value() && loaded->has_value());
     assert(loaded->value().files().front().metadata.author == "An author");
@@ -381,7 +389,8 @@ void toml_repository_tests(const std::filesystem::path& root) {
            !invalid_batch->front().second);
 
     std::ofstream(toml_root / ".crumb") << "not a manifest";
-    assert(!repository.load(path));
+    const auto invalid_load = repository.load(path);
+    assert(!invalid_load);
     std::filesystem::remove(toml_root / ".crumb");
     {
         std::ofstream output(toml_root / ".crumb");
@@ -392,9 +401,11 @@ void toml_repository_tests(const std::filesystem::path& root) {
     assert(::chmod((toml_root / ".crumb").c_str(), 0600) == 0);
     assert(!unreadable.has_value());
     std::filesystem::remove(toml_root / ".crumb");
-    assert(!repository.save(manifest_at(toml_root / "missing")));
+    const auto missing_save = repository.save(manifest_at(toml_root / "missing"));
+    assert(!missing_save);
     std::filesystem::create_directories(toml_root / ".crumb");
-    assert(!repository.save(manifest_at(toml_root)));
+    const auto directory_save = repository.save(manifest_at(toml_root));
+    assert(!directory_save);
     std::filesystem::remove_all(toml_root / ".crumb");
 
     infrastructure::TomlManifestMapper mapper;
@@ -416,9 +427,14 @@ void toml_repository_tests(const std::filesystem::path& root) {
 }  // namespace
 
 int main() {
-    const auto root = temp_root("infrastructure");
-    binary_repository_tests(root);
-    native_and_hash_tests(root);
-    toml_repository_tests(root);
-    std::filesystem::remove_all(root);
+    try {
+        const auto root = temp_root("infrastructure");
+        binary_repository_tests(root);
+        native_and_hash_tests(root);
+        toml_repository_tests(root);
+        std::filesystem::remove_all(root);
+    } catch (...) {
+        return 1;
+    }
+    return 0;
 }

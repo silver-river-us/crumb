@@ -1,6 +1,5 @@
-#include "boundary/cli/command_router.cpp"
-#include "boundary/cli/search_tap.cpp"
-#include "boundary/cli/user_config.cpp"
+#include "boundary/cli/command_router.hpp"
+#include "boundary/cli/search_tap.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -34,18 +33,20 @@ application::SearchResult result_with_url() {
 }
 
 void formatting_helpers() {
-    assert(crumb::boundary::format_result_date(std::nullopt) == "-");
-    assert(crumb::boundary::format_result_date(1'700'000'000'000'000'000, no_local_time) == "-");
-    assert(crumb::boundary::shorten("abc", 3) == "abc");
-    assert(crumb::boundary::shorten("abcdefgh", 8) == "abcdefgh");
-    assert(crumb::boundary::shorten("abcdefgh", 7) == "ab...gh");
-    assert(crumb::boundary::shorten("abcdefgh", 2) == "ab");
-    assert(crumb::boundary::clickable_url("https://example.test", true, "open").find("open") !=
-           std::string::npos);
+    assert(crumb::boundary::format_result_date_for_test(std::nullopt) == "-");
+    assert(crumb::boundary::format_result_date_for_test(1'700'000'000'000'000'000, no_local_time) ==
+           "-");
+    assert(crumb::boundary::testing::shorten_for_test("abc", 3) == "abc");
+    assert(crumb::boundary::testing::shorten_for_test("abcdefgh", 8) == "abcdefgh");
+    assert(crumb::boundary::testing::shorten_for_test("abcdefgh", 7) == "ab...gh");
+    assert(crumb::boundary::testing::shorten_for_test("abcdefgh", 2) == "ab");
+    assert(crumb::boundary::testing::clickable_url_for_test("https://example.test", true, "open")
+               .find("open") != std::string::npos);
 
     const auto invalid_root = path(std::string("bad\0root", 8));
     const auto match = result_with_url().matches.front();
-    const auto fallback = crumb::boundary::relative_result_path(invalid_root, match);
+    const auto fallback =
+        crumb::boundary::testing::relative_result_path_for_test(match, invalid_root);
     assert(!fallback.empty());
 
     const auto old_current = std::filesystem::current_path();
@@ -56,7 +57,8 @@ void formatting_helpers() {
     std::filesystem::remove_all(removed_current);
     auto relative_match = match;
     relative_match.directory = path("outside");
-    const auto error_path = crumb::boundary::relative_result_path(path("."), relative_match);
+    const auto error_path =
+        crumb::boundary::testing::relative_result_path_for_test(relative_match, path("."));
     assert(!error_path.empty());
     std::filesystem::current_path(old_current);
 }
@@ -89,16 +91,16 @@ void pager_helper() {
     assert(::dup2(slave, STDOUT_FILENO) >= 0);
 
     std::ostringstream ignored;
-    crumb::boundary::print_search_table(ignored, path("/tmp/root"), result_with_url(), true);
+    crumb::boundary::testing::print_search_table_for_test(ignored, path("/tmp/root"),
+                                                          result_with_url(), true);
 
-    struct rlimit old_limit {};
+    struct rlimit old_limit{};
     assert(::getrlimit(RLIMIT_NOFILE, &old_limit) == 0);
-    struct rlimit exhausted_limit {
-        0, old_limit.rlim_max
-    };
+    struct rlimit exhausted_limit{0, old_limit.rlim_max};
     assert(::setrlimit(RLIMIT_NOFILE, &exhausted_limit) == 0);
     std::ostringstream fallback;
-    crumb::boundary::print_search_table(fallback, path("/tmp/root"), result_with_url(), true);
+    crumb::boundary::testing::print_search_table_for_test(fallback, path("/tmp/root"),
+                                                          result_with_url(), true);
     assert(fallback.str().find("Search results:") != std::string::npos);
     assert(::setrlimit(RLIMIT_NOFILE, &old_limit) == 0);
 

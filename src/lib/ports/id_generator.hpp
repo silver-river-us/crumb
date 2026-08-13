@@ -1,6 +1,7 @@
 #pragma once
 
-#include "domain/value_objects/value_objects.hpp"
+#include "domain/value_objects/directory_id.hpp"
+#include "domain/value_objects/file_id.hpp"
 namespace crumb::ports {
 class IdGenerator {
    public:

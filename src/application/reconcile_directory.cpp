@@ -1,6 +1,11 @@
 #include "application/reconcile_directory.hpp"
 #include "domain/directory_manifest.hpp"
 #include "domain/file_identity_matcher.hpp"
+#include "lib/ports/clock.hpp"
+#include "lib/ports/filesystem.hpp"
+#include "lib/ports/id_generator.hpp"
+#include "lib/ports/manifest_repository.hpp"
+#include "lib/ports/metadata_extractor.hpp"
 
 #include <vector>
 

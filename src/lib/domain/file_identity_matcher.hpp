@@ -11,35 +11,35 @@ class FileIdentityMatcher {
    public:
     [[nodiscard]] static std::optional<std::size_t> match(
         const FileSnapshot& snapshot, const std::vector<FileEntry>& candidates) {
-        std::optional<std::size_t> result;
-        auto consider = [&](auto predicate) {
+        const auto find_match = [&](auto predicate) -> std::optional<std::size_t> {
             std::optional<std::size_t> found;
             for (std::size_t i = 0; i < candidates.size(); ++i) {
                 if (predicate(candidates[i])) {
-                    if (found.has_value()) return;  // ambiguous: deliberately refuse to guess
+                    if (found.has_value()) return std::nullopt;
                     found = i;
                 }
             }
-            result = found;
+            return found;
         };
-        consider([&](const FileEntry& e) {
-            return snapshot.metadata.inode && snapshot.metadata.device && e.metadata.inode &&
-                   e.metadata.device && *snapshot.metadata.inode == *e.metadata.inode &&
-                   *snapshot.metadata.device == *e.metadata.device;
-        });
-        if (result) return result;
-        consider([&](const FileEntry& e) {
-            return snapshot.metadata.content_hash && e.metadata.content_hash &&
-                   *snapshot.metadata.content_hash == *e.metadata.content_hash &&
-                   snapshot.metadata.size == e.metadata.size;
-        });
-        if (result) return result;
-        consider([&](const FileEntry& e) {
+        if (const auto result = find_match([&](const FileEntry& e) {
+                return snapshot.metadata.inode && snapshot.metadata.device && e.metadata.inode &&
+                       e.metadata.device && *snapshot.metadata.inode == *e.metadata.inode &&
+                       *snapshot.metadata.device == *e.metadata.device;
+            })) {
+            return result;
+        }
+        if (const auto result = find_match([&](const FileEntry& e) {
+                return snapshot.metadata.content_hash && e.metadata.content_hash &&
+                       *snapshot.metadata.content_hash == *e.metadata.content_hash &&
+                       snapshot.metadata.size == e.metadata.size;
+            })) {
+            return result;
+        }
+        return find_match([&](const FileEntry& e) {
             return snapshot.fingerprint.value() == e.fingerprint.value() &&
                    snapshot.metadata.size == e.metadata.size &&
                    snapshot.metadata.modified_ns == e.metadata.modified_ns;
         });
-        return result;
     }
 };
 }  // namespace crumb::domain

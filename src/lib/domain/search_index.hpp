@@ -1,6 +1,8 @@
 #pragma once
 
 #include "domain/file_entry.hpp"
+#include "domain/value_objects/directory_path.hpp"
+#include "domain/value_objects/file_name.hpp"
 #include "domain/value_objects/value_objects.hpp"
 
 #include <algorithm>
@@ -31,9 +33,10 @@ class SearchQuery {
             }
         };
 
-        for (const unsigned char character : value) {
-            if (std::isalnum(character) || character == '_') {
-                current.push_back(static_cast<char>(std::tolower(character)));
+        for (const char character : value) {
+            const auto byte = static_cast<unsigned char>(character);
+            if (std::isalnum(byte) || character == '_') {
+                current.push_back(static_cast<char>(std::tolower(byte)));
             } else if (!current.empty()) {
                 add(std::move(current));
                 current.clear();
@@ -155,14 +158,18 @@ class SearchIndexBuilder {
         if (entry.metadata.title) add_terms(terms, *entry.metadata.title);
         if (entry.metadata.author) add_terms(terms, *entry.metadata.author);
         for (const auto& tag : entry.metadata.tags) add_terms(terms, tag);
-        for (const auto& [key, value] : entry.metadata.extension_fields)
-            add_terms(terms, key + " " + value);
+        for (const auto& [key, value] : entry.metadata.extension_fields) {
+            std::string text = key;
+            text += ' ';
+            text += value;
+            add_terms(terms, text);
+        }
         for (const auto& [term, count] : terms) postings_[term][document_id] = count;
     }
 
     [[nodiscard]] SearchIndex build() && {
         for (auto& [term, postings] : postings_) {
-            SearchTerm item{std::move(term), {}};
+            SearchTerm item{term, {}};
             for (const auto& [document_id, count] : postings)
                 item.postings.push_back({document_id, count});
             std::ranges::sort(item.postings, {}, &SearchPosting::document_id);
@@ -176,13 +183,14 @@ class SearchIndexBuilder {
     static void add_terms(std::unordered_map<std::string, std::uint32_t>& terms,
                           std::string_view text) {
         std::string current;
-        const auto add = [&terms](const std::string& word) {
-            if (word.size() >= 3) ++terms[word];
+        const auto add = [&terms](std::string word) {
+            if (word.size() >= 3) ++terms[std::move(word)];
         };
 
-        for (const unsigned char character : text) {
-            if (std::isalnum(character) || character == '_') {
-                current.push_back(static_cast<char>(std::tolower(character)));
+        for (const char character : text) {
+            const auto byte = static_cast<unsigned char>(character);
+            if (std::isalnum(byte) || character == '_') {
+                current.push_back(static_cast<char>(std::tolower(byte)));
             } else if (!current.empty()) {
                 add(std::move(current));
                 current.clear();

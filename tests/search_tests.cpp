@@ -38,6 +38,7 @@ class InMemoryFileSystem final : public crumb::ports::FileSystem {
                   std::string>
     list_regular_files_recursive(const crumb::domain::DirectoryPath& directory) override {
         std::vector<std::pair<crumb::domain::DirectoryPath, crumb::domain::FileName>> result;
+        result.reserve(contents.size());
         for (const auto& [name, _] : contents)
             result.emplace_back(directory, crumb::domain::FileName::create(name));
         return result;

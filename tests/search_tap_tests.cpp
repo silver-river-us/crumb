@@ -11,7 +11,8 @@ int main() {
     result.inspected = 3;
     result.matches.push_back({directory, crumb::domain::FileName::create("proposal.md"), 1.25,
                               "text/markdown", "https://drive.google.com/open?id=abc_123-xyz",
-                              std::nullopt, std::nullopt});
+                              std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+                              std::nullopt});
     result.trace = {
         {"query_parse", 0, 14, "2 terms"},
         {"index_load", 14, 32, "persisted index"},

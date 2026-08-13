@@ -1,11 +1,15 @@
 #include "application/rebuild_search_index.hpp"
 #include "application/search_manifest.hpp"
 #include "domain/directory_manifest.hpp"
+#include "domain/value_objects/content_hash.hpp"
+#include "domain/value_objects/directory_id.hpp"
+#include "domain/value_objects/file_id.hpp"
+#include "domain/value_objects/fingerprint.hpp"
+
 #include "domain/file_identity_matcher.hpp"
-#include "lib/ports/clock.hpp"
+
 #include "lib/ports/filesystem.hpp"
-#include "lib/ports/fingerprint_service.hpp"
-#include "lib/ports/id_generator.hpp"
+
 #include "lib/ports/manifest_repository.hpp"
 #include "lib/ports/search_index_repository.hpp"
 
@@ -29,7 +33,7 @@ void throws(Function&& function) {
     assert(caught);
 }
 
-domain::FileEntry entry(std::string name, domain::FileId id = file_id) {
+domain::FileEntry entry(std::string name, const domain::FileId& id = file_id) {
     domain::FileMetadata metadata;
     metadata.size = 3;
     metadata.modified_ns = 4;
@@ -38,7 +42,8 @@ domain::FileEntry entry(std::string name, domain::FileId id = file_id) {
 }
 
 void value_and_manifest_tests() {
-    assert(domain::ValidatedString{}.empty());
+    const domain::ValidatedString empty_value;
+    assert(empty_value.empty());
     for (const std::string value : {"", ".", "..", "a/b", "a\\b"})
         throws([&] { (void)domain::FileName::create(value); });
     throws([] { (void)domain::DirectoryPath::create(""); });
@@ -165,13 +170,16 @@ void application_error_tests() {
     Index index;
     application::RebuildSearchIndex rebuild(manifests, filesystem, index);
     filesystem.directory_error = true;
-    assert(!rebuild.execute(directory));
+    const auto directory_error = rebuild.execute(directory);
+    assert(!directory_error);
     filesystem.directory_error = false;
     manifests.load_error = true;
-    assert(!rebuild.execute(directory));
+    const auto load_error = rebuild.execute(directory);
+    assert(!load_error);
     manifests.load_error = false;
     index.save_error = true;
-    assert(!rebuild.execute(directory));
+    const auto save_error = rebuild.execute(directory);
+    assert(!save_error);
 
     application::SearchManifest search(manifests, filesystem);
     filesystem.directory_error = true;
@@ -211,7 +219,12 @@ void application_error_tests() {
 }  // namespace
 
 int main() {
-    value_and_manifest_tests();
-    identity_tests();
-    application_error_tests();
+    try {
+        value_and_manifest_tests();
+        identity_tests();
+        application_error_tests();
+    } catch (...) {
+        return 1;
+    }
+    return 0;
 }

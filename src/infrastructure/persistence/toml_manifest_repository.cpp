@@ -6,15 +6,14 @@
 #include <thread>
 
 namespace crumb::infrastructure {
-namespace {
-using LoadFunction = std::expected<std::optional<domain::DirectoryManifest>, std::string> (*)(
-    TomlManifestRepository&, const domain::DirectoryPath&);
-
-LoadFunction load_function = [](TomlManifestRepository& repository,
-                                const domain::DirectoryPath& directory) {
+namespace testing {
+std::expected<std::optional<domain::DirectoryManifest>, std::string> default_load_function(
+    TomlManifestRepository& repository, const domain::DirectoryPath& directory) {
     return repository.load(directory);
-};
-}  // namespace
+}
+
+LoadFunction load_function = default_load_function;
+}  // namespace testing
 
 std::expected<std::optional<domain::DirectoryManifest>, std::string> TomlManifestRepository::load(
     const domain::DirectoryPath& directory) {
@@ -47,7 +46,7 @@ std::expected<ports::LoadedManifestBatch, std::string> TomlManifestRepository::l
                 const auto index = next.fetch_add(1, std::memory_order_relaxed);
                 if (index >= directories.size()) return;
                 try {
-                    loaded[index] = load_function(*this, directories[index]);
+                    loaded[index] = testing::load_function(*this, directories[index]);
                 } catch (const std::exception& error) {
                     loaded[index] = std::unexpected(error.what());
                 }

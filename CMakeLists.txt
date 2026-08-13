@@ -147,8 +147,6 @@ if(CPPCHECK_EXECUTABLE)
     add_custom_target(cppcheck
         COMMAND ${CPPCHECK_EXECUTABLE} --project=${CMAKE_BINARY_DIR}/compile_commands.json
                 --enable=warning,performance,portability --error-exitcode=1
-                --suppress=missingIncludeSystem --suppress=identicalConditionAfterEarlyExit
-                --suppress=assertWithSideEffect
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running cppcheck"
         VERBATIM)
@@ -210,12 +208,12 @@ if(BUILD_TESTING)
     target_link_libraries(crumb_edge_case_tests PRIVATE crumb_application)
     add_test(NAME crumb_edge_case_tests COMMAND crumb_edge_case_tests)
     add_executable(crumb_boundary_internal_tests tests/boundary_internal_tests.cpp)
-    target_link_libraries(crumb_boundary_internal_tests PRIVATE crumb_application crumb_google_drive crumb_infrastructure)
+    target_link_libraries(crumb_boundary_internal_tests PRIVATE crumb_boundary crumb_google_drive crumb_infrastructure)
     add_test(NAME crumb_boundary_internal_tests COMMAND crumb_boundary_internal_tests)
     add_executable(crumb_persistence_internal_tests tests/persistence_internal_tests.cpp)
-    target_link_libraries(crumb_persistence_internal_tests PRIVATE crumb_lib ZLIB::ZLIB Threads::Threads)
+    target_link_libraries(crumb_persistence_internal_tests PRIVATE crumb_boundary crumb_infrastructure ZLIB::ZLIB Threads::Threads)
     add_test(NAME crumb_persistence_internal_tests COMMAND crumb_persistence_internal_tests)
     add_executable(crumb_plugin_internal_tests tests/plugin_internal_tests.cpp)
-    target_link_libraries(crumb_plugin_internal_tests PRIVATE crumb_application crumb_infrastructure)
+    target_link_libraries(crumb_plugin_internal_tests PRIVATE crumb_google_drive)
     add_test(NAME crumb_plugin_internal_tests COMMAND crumb_plugin_internal_tests)
 endif()

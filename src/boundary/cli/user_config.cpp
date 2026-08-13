@@ -69,6 +69,15 @@ std::filesystem::path default_home() {
 }
 }  // namespace
 
+namespace testing {
+std::expected<std::string, std::string> parse_string_for_test(std::string_view value,
+                                                              std::size_t line) {
+    return parse_string(value, line);
+}
+
+bool valid_alias_for_test(std::string_view name) { return valid_alias(name); }
+}  // namespace testing
+
 std::expected<UserConfig, std::string> UserConfig::load_default() {
     const auto home = default_home();
     if (home.empty()) return std::unexpected("cannot determine the user's home directory");

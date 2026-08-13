@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/file_snapshot.hpp"
+#include "domain/value_objects/directory_path.hpp"
 #include <expected>
 #include <optional>
 #include <string>

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "domain/file_metadata.hpp"
-#include "domain/value_objects/value_objects.hpp"
+#include "domain/value_objects/file_name.hpp"
+#include "domain/value_objects/fingerprint.hpp"
 
 namespace crumb::domain {
 struct FileSnapshot {

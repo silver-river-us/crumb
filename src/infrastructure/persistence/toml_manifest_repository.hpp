@@ -1,7 +1,15 @@
 #pragma once
 #include "infrastructure/persistence/toml_manifest_mapper.hpp"
 #include "lib/ports/manifest_repository.hpp"
+
 namespace crumb::infrastructure {
+class TomlManifestRepository;
+namespace testing {
+using LoadFunction = std::expected<std::optional<domain::DirectoryManifest>, std::string> (*)(
+    TomlManifestRepository&, const domain::DirectoryPath&);
+extern LoadFunction load_function;
+}  // namespace testing
+
 class TomlManifestRepository final : public ports::ManifestRepository {
    public:
     std::expected<std::optional<domain::DirectoryManifest>, std::string> load(

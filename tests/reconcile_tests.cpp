@@ -1,5 +1,9 @@
 #include "application/reconcile_directory.hpp"
 #include "infrastructure/filesystem/native_filesystem.hpp"
+#include "lib/ports/clock.hpp"
+#include "lib/ports/fingerprint_service.hpp"
+#include "lib/ports/id_generator.hpp"
+#include "lib/ports/manifest_repository.hpp"
 
 #include <cassert>
 #include <filesystem>
@@ -69,12 +73,14 @@ int main() {
                                                      filesystem, ids, clock);
     const auto path = crumb::domain::DirectoryPath::create(directory.string());
 
-    assert(reconcile.execute(path).has_value());
+    const auto initial_reconcile = reconcile.execute(path);
+    assert(initial_reconcile.has_value());
     assert(manifests.manifest.has_value());
     manifests.manifest->files()[0].metadata.extension_fields["custom.owner"] = "legal";
 
     std::filesystem::rename(directory / "notes.txt", directory / "renamed.txt");
-    assert(reconcile.execute(path).has_value());
+    const auto rename_reconcile = reconcile.execute(path);
+    assert(rename_reconcile.has_value());
     assert(manifests.manifest->find(crumb::domain::FileName::create("renamed.txt")) != nullptr);
     assert(manifests.manifest->files()[0].metadata.extension_fields.at("custom.owner") == "legal");
 
@@ -82,7 +88,8 @@ int main() {
         std::ofstream file(directory / "renamed.txt", std::ios::trunc);
         file << "changed content with a new fingerprint";
     }
-    assert(reconcile.execute(path).has_value());
+    const auto changed_reconcile = reconcile.execute(path);
+    assert(changed_reconcile.has_value());
     assert(manifests.manifest->files()[0].metadata.extension_fields.at("custom.owner") == "legal");
 
     std::filesystem::remove_all(directory);

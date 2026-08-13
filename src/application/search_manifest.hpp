@@ -1,6 +1,7 @@
 #pragma once
 
-#include "domain/value_objects/value_objects.hpp"
+#include "domain/value_objects/directory_path.hpp"
+#include "domain/value_objects/file_name.hpp"
 #include "lib/ports/filesystem.hpp"
 #include "lib/ports/manifest_repository.hpp"
 #include "lib/ports/search_index_repository.hpp"

@@ -4,5 +4,6 @@ set -eu
 root_dir=${0%/*}/..
 cd "$root_dir"
 
-bin/lint
-cmake --build build --target format-check cppcheck iwyu
+cmake -S . -B build -DCRUMB_WARNINGS_AS_ERRORS=ON
+cmake --build build
+cmake --build build --target lint format-check cppcheck iwyu

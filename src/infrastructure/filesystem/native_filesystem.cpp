@@ -48,9 +48,10 @@ std::string search_terms(std::string_view content) {
             terms.push_back(std::move(word));
         }
     };
-    for (const unsigned char character : content) {
-        if (std::isalnum(character) || character == '_') {
-            current.push_back(static_cast<char>(std::tolower(character)));
+    for (const char character : content) {
+        const auto byte = static_cast<unsigned char>(character);
+        if (std::isalnum(byte) || character == '_') {
+            current.push_back(static_cast<char>(std::tolower(byte)));
         } else if (!current.empty()) {
             add(std::move(current));
             current.clear();
@@ -80,7 +81,7 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> NativeFileSystem::
             metadata.type = mime(name.value());
             metadata.size = item.file_size();
             metadata.modified_ns = ns(item.last_write_time());
-            struct stat info {};
+            struct stat info{};
             if (::stat(item.path().c_str(), &info) == 0) {
                 metadata.inode = static_cast<std::uintmax_t>(info.st_ino);
                 metadata.device = static_cast<std::uintmax_t>(info.st_dev);

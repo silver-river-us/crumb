@@ -1,12 +1,19 @@
 #pragma once
 
 #include <expected>
+#include <cstddef>
 #include <filesystem>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
 namespace crumb::boundary {
+namespace testing {
+std::expected<std::string, std::string> parse_string_for_test(std::string_view value,
+                                                              std::size_t line);
+bool valid_alias_for_test(std::string_view name);
+}  // namespace testing
+
 class UserConfig {
    public:
     static std::expected<UserConfig, std::string> load_default();

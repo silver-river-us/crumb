@@ -1,5 +1,6 @@
 #include "plugins/google_drive/google_drive_plugin.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cctype>
 #include <chrono>
@@ -8,10 +9,8 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <poll.h>
-#include <ranges>
+
 #include <signal.h>
 #include <sstream>
 #include <sys/stat.h>
@@ -137,9 +136,10 @@ std::string search_terms(std::string_view content) {
         if (word.size() < 3 || std::ranges::find(terms, word) != terms.end()) return;
         terms.push_back(std::move(word));
     };
-    for (const unsigned char character : content) {
-        if (std::isalnum(character) || character == '_') {
-            current.push_back(static_cast<char>(std::tolower(character)));
+    for (const char character : content) {
+        const auto byte = static_cast<unsigned char>(character);
+        if (std::isalnum(byte) || character == '_') {
+            current.push_back(static_cast<char>(std::tolower(byte)));
         } else if (!current.empty()) {
             if (std::ranges::find(stopwords, current) == stopwords.end()) add(std::move(current));
             current.clear();
@@ -149,7 +149,10 @@ std::string search_terms(std::string_view content) {
         add(std::move(current));
     std::ranges::sort(terms);
     std::string result = "|";
-    for (const auto& term : terms) result += term + "|";
+    for (const auto& term : terms) {
+        result += term;
+        result += '|';
+    }
     return result;
 }
 
@@ -181,9 +184,7 @@ std::optional<std::string> command_output(const std::string& command, std::size_
             ::close(descriptors[0]);
             return std::nullopt;
         }
-        struct pollfd descriptor {
-            descriptors[0], POLLIN, 0
-        };
+        struct pollfd descriptor{descriptors[0], POLLIN, 0};
         const auto polled = ::poll(&descriptor, 1, static_cast<int>(remaining.count()));
         if (polled < 0 && errno != EINTR) break;
         if (polled > 0 && (descriptor.revents & (POLLIN | POLLHUP))) {
@@ -288,8 +289,8 @@ std::filesystem::path cache_base() {
 
 std::filesystem::path cache_root_for(const domain::DirectoryPath& source_root) {
     std::uint64_t hash = 14695981039346656037ull;
-    for (const unsigned char character : source_root.value()) {
-        hash ^= character;
+    for (const char character : source_root.value()) {
+        hash ^= static_cast<unsigned char>(character);
         hash *= 1099511628211ull;
     }
     std::ostringstream key;
@@ -298,6 +299,17 @@ std::filesystem::path cache_root_for(const domain::DirectoryPath& source_root) {
 }
 
 }  // namespace
+
+namespace testing {
+std::optional<std::string> command_output_for_test(const std::string& command, std::size_t limit,
+                                                   std::chrono::milliseconds timeout) {
+    return command_output(command, limit, timeout);
+}
+
+std::optional<std::string> extract_office_text_for_test(const std::filesystem::path& path) {
+    return extract_office_text(path);
+}
+}  // namespace testing
 
 void DriveManifestRepository::set_source_root(const domain::DirectoryPath& source_root) {
     source_root_ = source_root.value();
@@ -377,7 +389,7 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> DriveFileSystem::l
             metadata.type = mime_type(name.value());
             metadata.size = item.file_size();
             metadata.modified_ns = file_time_ns(item.last_write_time());
-            struct stat info {};
+            struct stat info{};
             if (::stat(item.path().c_str(), &info) == 0) {
                 metadata.inode = static_cast<std::uintmax_t>(info.st_ino);
                 metadata.device = static_cast<std::uintmax_t>(info.st_dev);

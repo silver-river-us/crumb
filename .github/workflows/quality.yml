@@ -29,7 +29,7 @@ jobs:
           sudo apt-get install --yes clang clang-tidy clang-format cppcheck iwyu cmake ninja-build zlib1g-dev libc++-dev libc++abi-dev
 
       - name: Configure
-        run: cmake --preset default -G Ninja -D CMAKE_CXX_COMPILER=clang++ -D CMAKE_CXX_FLAGS=-stdlib=libc++ -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
+        run: cmake --preset default -G Ninja -D CMAKE_CXX_COMPILER=clang++ -D CMAKE_CXX_FLAGS=-stdlib=libc++ -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++ -D CRUMB_WARNINGS_AS_ERRORS=ON
 
       - name: Build
         run: cmake --build --preset default
