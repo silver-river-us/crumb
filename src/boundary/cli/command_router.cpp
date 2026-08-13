@@ -1,6 +1,5 @@
 #include "boundary/cli/command_router.hpp"
 #include "boundary/cli/search_tap.hpp"
-#include "domain/value_objects/value_objects.hpp"
 
 #include <charconv>
 #include <chrono>
@@ -171,6 +170,19 @@ namespace testing {
 std::string relative_result_path_for_test(const application::SearchMatch& match,
                                           const domain::DirectoryPath& root) {
     return relative_result_path(root, match);
+}
+
+std::string clickable_url_for_test(std::string_view url, bool interactive, std::string_view label) {
+    return clickable_url(url, interactive, label);
+}
+
+std::string shorten_for_test(std::string_view value, std::size_t width) {
+    return shorten(value, width);
+}
+
+void print_search_table_for_test(std::ostream& output, const domain::DirectoryPath& directory,
+                                 const application::SearchResult& result, bool scrollable) {
+    print_search_table(output, directory, result, scrollable);
 }
 }  // namespace testing
 

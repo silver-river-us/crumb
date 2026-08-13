@@ -6,6 +6,10 @@
 #include <zlib.h>
 
 namespace crumb::infrastructure {
+namespace testing {
+CompressFunction compress_function = ::compress2;
+}  // namespace testing
+
 namespace {
 constexpr char magic[] = "CRZ5";
 constexpr char legacy_modified_magic[] = "CRZ4";
@@ -125,6 +129,14 @@ std::expected<domain::SearchIndex, std::string> deserialize(std::istream& in, bo
 }
 }  // namespace
 
+namespace testing {
+std::expected<domain::SearchIndex, std::string> deserialize_for_test(std::istream& input,
+                                                                     bool has_modified_ns,
+                                                                     bool has_file_id) {
+    return deserialize(input, has_modified_ns, has_file_id);
+}
+}  // namespace testing
+
 std::expected<void, std::string> BinarySearchIndexRepository::save(
     const domain::DirectoryPath& root, const domain::SearchIndex& index) {
     const auto path = std::filesystem::path(root.value()) / ".crumb.index";
@@ -135,9 +147,9 @@ std::expected<void, std::string> BinarySearchIndexRepository::save(
         const auto input = raw.str();
         uLongf compressed_size = compressBound(static_cast<uLong>(input.size()));
         std::vector<Bytef> compressed(compressed_size);
-        if (compress2(compressed.data(), &compressed_size,
-                      reinterpret_cast<const Bytef*>(input.data()),
-                      static_cast<uLong>(input.size()), Z_BEST_SPEED) != Z_OK)
+        if (testing::compress_function(compressed.data(), &compressed_size,
+                                       reinterpret_cast<const Bytef*>(input.data()),
+                                       static_cast<uLong>(input.size()), Z_BEST_SPEED) != Z_OK)
             return std::unexpected("cannot compress search index");
         std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
         if (!out) return std::unexpected("cannot write " + temporary);

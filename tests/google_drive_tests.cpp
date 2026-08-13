@@ -1,4 +1,13 @@
 #include "plugins/google_drive/google_drive_plugin.hpp"
+#include "domain/value_objects/content_hash.hpp"
+#include "domain/value_objects/directory_id.hpp"
+#include "domain/value_objects/file_id.hpp"
+#include "domain/value_objects/fingerprint.hpp"
+#include "lib/ports/clock.hpp"
+#include "lib/ports/fingerprint_service.hpp"
+#include "lib/ports/id_generator.hpp"
+#include "lib/ports/manifest_repository.hpp"
+#include "lib/ports/search_index_repository.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -118,20 +127,25 @@ void repository_tests(const std::filesystem::path& root) {
     ManifestRepository delegate;
     plugins::google_drive::DriveManifestRepository manifests(delegate);
     auto source = domain::DirectoryPath::create(root.string());
-    assert(!manifests.load(source));
+    const auto initial_load = manifests.load(source);
+    assert(!initial_load);
     manifests.set_source_root(source);
-    assert(manifests.load(source).has_value());
+    const auto cached_load = manifests.load(source);
+    assert(cached_load.has_value());
     delegate.values[(root / "cache").string()] = std::nullopt;
-    assert(manifests.save(manifest_at(root)));
+    const auto manifest_save = manifests.save(manifest_at(root));
+    assert(manifest_save);
     assert(!delegate.values.empty());
     auto loaded = manifests.load(source);
     assert(loaded.has_value() && loaded->has_value());
     assert(loaded->value().path().value() == root.string());
     delegate.fail_load = true;
-    assert(!manifests.load(source));
+    const auto failed_load = manifests.load(source);
+    assert(!failed_load);
     delegate.fail_load = false;
     delegate.fail_save = true;
-    assert(!manifests.save(manifest_at(root)));
+    const auto failed_save = manifests.save(manifest_at(root));
+    assert(!failed_save);
 
     SearchIndexRepository index_delegate;
     plugins::google_drive::DriveSearchIndexRepository indexes(index_delegate);
@@ -139,11 +153,14 @@ void repository_tests(const std::filesystem::path& root) {
     assert(!indexes.size(source));
     domain::SearchIndex index;
     indexes.set_cache_root(root / "index-cache");
-    assert(indexes.save(source, index));
-    assert(indexes.load(source).has_value());
+    const auto index_save = indexes.save(source, index);
+    assert(index_save);
+    const auto index_load = indexes.load(source);
+    assert(index_load.has_value());
     assert(indexes.size(source).value() == 42);
     index_delegate.fail_save = true;
-    assert(!indexes.save(source, index));
+    const auto failed_index_save = indexes.save(source, index);
+    assert(!failed_index_save);
     index_delegate.fail_save = false;
     index_delegate.fail_load = true;
     assert(!indexes.load(source));
@@ -155,9 +172,11 @@ void repository_tests(const std::filesystem::path& root) {
     std::ofstream(bad_cache_parent) << "not a directory";
     setenv("XDG_CACHE_HOME", bad_cache_parent.c_str(), 1);
     manifests.set_source_root(source);
-    assert(!manifests.save(manifest_at(root)));
+    const auto bad_manifest_save = manifests.save(manifest_at(root));
+    assert(!bad_manifest_save);
     indexes.set_cache_root(bad_cache_parent / "crumb");
-    assert(!indexes.save(source, index));
+    const auto bad_index_save = indexes.save(source, index);
+    assert(!bad_index_save);
     setenv("XDG_CACHE_HOME", (root / "cache").c_str(), 1);
     unsetenv("HOME");
     manifests.set_source_root(source);
@@ -191,13 +210,17 @@ void filesystem_tests(const std::filesystem::path& root) {
     assert(recursive.has_value() && recursive->size() == 9);
     auto directories = filesystem.list_directories_recursive(path);
     assert(directories.has_value() && directories->size() == 2);
-    assert(filesystem.read_text_file(path, domain::FileName::create("a.md"))->has_value());
-    assert(
-        !filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string())));
-    assert(!filesystem.list_regular_files_recursive(
-        domain::DirectoryPath::create((root / "missing").string())));
-    assert(!filesystem.list_directories_recursive(
-        domain::DirectoryPath::create((root / "missing").string())));
+    const auto read_text = filesystem.read_text_file(path, domain::FileName::create("a.md"));
+    assert(read_text->has_value());
+    const auto missing_files =
+        filesystem.list_regular_files(domain::DirectoryPath::create((root / "missing").string()));
+    assert(!missing_files);
+    const auto missing_recursive = filesystem.list_regular_files_recursive(
+        domain::DirectoryPath::create((root / "missing").string()));
+    assert(!missing_recursive);
+    const auto missing_directories = filesystem.list_directories_recursive(
+        domain::DirectoryPath::create((root / "missing").string()));
+    assert(!missing_directories);
 
 #ifdef __APPLE__
     constexpr char item_attribute[] = "com.google.drivefs.item-id#S";
@@ -231,14 +254,24 @@ void filesystem_tests(const std::filesystem::path& root) {
         extractor.extract(domain::DirectoryPath::create((root / "nested").string()),
                           domain::FileName::create("note.doc"), {});
     assert(office_enabled.has_value());
-    assert(extractor.extract(path, domain::FileName::create("a.md"), {}).has_value());
-    assert(extractor.extract(path, domain::FileName::create("z.pdf"), {}).has_value());
-    assert(extractor.extract(path, domain::FileName::create("b.docx"), {}).has_value());
-    assert(extractor.extract(path, domain::FileName::create("c.rtf"), {}).has_value());
-    assert(extractor.extract(path, domain::FileName::create("d.html"), {}).has_value());
-    assert(extractor.extract(path, domain::FileName::create("e.htm"), {}).has_value());
-    assert(extractor.extract(path, domain::FileName::create("f.unknown"), {}).has_value());
-    assert(extractor.extract(path, domain::FileName::create("quote'name.txt"), {}).has_value());
+    const auto a_metadata = extractor.extract(path, domain::FileName::create("a.md"), {});
+    const auto pdf_metadata = extractor.extract(path, domain::FileName::create("z.pdf"), {});
+    const auto docx_metadata = extractor.extract(path, domain::FileName::create("b.docx"), {});
+    const auto rtf_metadata = extractor.extract(path, domain::FileName::create("c.rtf"), {});
+    const auto html_metadata = extractor.extract(path, domain::FileName::create("d.html"), {});
+    const auto htm_metadata = extractor.extract(path, domain::FileName::create("e.htm"), {});
+    const auto unknown_metadata =
+        extractor.extract(path, domain::FileName::create("f.unknown"), {});
+    const auto quoted_metadata =
+        extractor.extract(path, domain::FileName::create("quote'name.txt"), {});
+    assert(a_metadata.has_value());
+    assert(pdf_metadata.has_value());
+    assert(docx_metadata.has_value());
+    assert(rtf_metadata.has_value());
+    assert(html_metadata.has_value());
+    assert(htm_metadata.has_value());
+    assert(unknown_metadata.has_value());
+    assert(quoted_metadata.has_value());
 #ifdef __APPLE__
     const auto old_pipe = plugins::google_drive::testing::pipe_function;
     const auto old_fork = plugins::google_drive::testing::fork_process;
@@ -254,7 +287,8 @@ void filesystem_tests(const std::filesystem::path& root) {
         output.seekp(8ULL * 1024 * 1024);
         output.put('x');
     }
-    assert(extractor.extract(path, domain::FileName::create("large.txt"), {}).has_value());
+    const auto large_metadata = extractor.extract(path, domain::FileName::create("large.txt"), {});
+    assert(large_metadata.has_value());
     unsetenv("CRUMB_DRIVE_CONTENT");
 }
 
@@ -288,7 +322,8 @@ void plugin_tests(const std::filesystem::path& root) {
 #else
     assert(searched->matches.empty());
 #endif
-    assert(!plugin.index((root / "missing").string()));
+    const auto missing_index = plugin.index((root / "missing").string());
+    assert(!missing_index);
 
     const auto old_home = std::getenv("HOME");
     (void)old_home;
@@ -313,11 +348,16 @@ void plugin_tests(const std::filesystem::path& root) {
 }  // namespace
 
 int main() {
-    assert(crumb::plugins::google_drive::GoogleDrivePlugin::url_for_item_id("abc_123-xyz") ==
-           "https://drive.google.com/open?id=abc_123-xyz");
-    const auto root = temp_root();
-    repository_tests(root);
-    filesystem_tests(root / "filesystem");
-    plugin_tests(root);
-    std::filesystem::remove_all(root);
+    try {
+        assert(crumb::plugins::google_drive::GoogleDrivePlugin::url_for_item_id("abc_123-xyz") ==
+               "https://drive.google.com/open?id=abc_123-xyz");
+        const auto root = temp_root();
+        repository_tests(root);
+        filesystem_tests(root / "filesystem");
+        plugin_tests(root);
+        std::filesystem::remove_all(root);
+    } catch (...) {
+        return 1;
+    }
+    return 0;
 }

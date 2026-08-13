@@ -1,7 +1,9 @@
 #pragma once
 
 #include "domain/file_entry.hpp"
-#include "domain/value_objects/value_objects.hpp"
+#include "domain/value_objects/directory_id.hpp"
+#include "domain/value_objects/directory_path.hpp"
+#include "domain/value_objects/file_name.hpp"
 
 #include <algorithm>
 #include <stdexcept>

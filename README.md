@@ -34,7 +34,7 @@ bin/sanitize tsan                # Thread sanitizer
 bin/coverage                      # LLVM source-based coverage report
 ```
 
-`bin/check` requires all three Homebrew packages. The sanitizer commands build and test into dedicated `build/asan-ubsan` and `build/tsan` directories. `bin/coverage` uses the LLVM tools that match the compiler (Xcode’s tools on macOS) and reports coverage for `src/`, excluding tests and system headers.
+`bin/check` configures the build with `CRUMB_WARNINGS_AS_ERRORS=ON`, then requires all three Homebrew packages for the static analyzers. The sanitizer commands build and test into dedicated `build/asan-ubsan` and `build/tsan` directories. `bin/coverage` uses the LLVM tools that match the compiler (Xcode’s tools on macOS) and reports coverage for `src/`, excluding tests and system headers.
 
 The CI sanitizer jobs have focused purposes: AddressSanitizer (ASan) detects memory errors, UndefinedBehaviorSanitizer (UBSan) detects invalid C++ operations, and ThreadSanitizer (TSan) detects data races and other threading errors.
 

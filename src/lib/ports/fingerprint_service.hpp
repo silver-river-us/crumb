@@ -1,6 +1,9 @@
 #pragma once
 
-#include "domain/value_objects/value_objects.hpp"
+#include "domain/value_objects/content_hash.hpp"
+#include "domain/value_objects/directory_path.hpp"
+#include "domain/value_objects/file_name.hpp"
+#include "domain/value_objects/fingerprint.hpp"
 #include <expected>
 #include <string>
 

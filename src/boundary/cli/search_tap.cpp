@@ -183,6 +183,11 @@ std::string render_html(std::string_view query, const domain::DirectoryPath& dir
 
 }  // namespace
 
+std::string format_result_date_for_test(std::optional<std::int64_t> nanoseconds,
+                                        std::tm* (*local_time)(const std::time_t*)) {
+    return format_result_date(nanoseconds, local_time);
+}
+
 std::string render_search_tap(std::string_view query, const domain::DirectoryPath& directory,
                               const application::SearchResult& result, TapFormat format) {
     return format == TapFormat::html ? render_html(query, directory, result)

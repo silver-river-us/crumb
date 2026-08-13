@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdio>
+#include <ostream>
 #include "application/index_size.hpp"
 #include "application/reconcile_directory.hpp"
 #include "application/rebuild_search_index.hpp"
@@ -13,6 +14,11 @@ using PopenFunction = FILE* (*)(const char*, const char*);
 extern PopenFunction popen_function;
 std::string relative_result_path_for_test(const application::SearchMatch&,
                                           const domain::DirectoryPath&);
+std::string clickable_url_for_test(std::string_view url, bool interactive,
+                                   std::string_view label = {});
+std::string shorten_for_test(std::string_view value, std::size_t width);
+void print_search_table_for_test(std::ostream& output, const domain::DirectoryPath& directory,
+                                 const application::SearchResult& result, bool scrollable);
 }  // namespace testing
 
 class CommandRouter {

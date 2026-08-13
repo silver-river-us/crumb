@@ -1,15 +1,19 @@
 #pragma once
 
-#include "domain/value_objects/value_objects.hpp"
-#include "lib/ports/clock.hpp"
-#include "lib/ports/filesystem.hpp"
-#include "lib/ports/fingerprint_service.hpp"
-#include "lib/ports/id_generator.hpp"
-#include "lib/ports/manifest_repository.hpp"
-#include "lib/ports/metadata_extractor.hpp"
+#include "domain/value_objects/directory_path.hpp"
+
 #include <cstddef>
 #include <expected>
 #include <string>
+
+namespace crumb::ports {
+class Clock;
+class FileSystem;
+class FingerprintService;
+class IdGenerator;
+class ManifestRepository;
+class MetadataExtractor;
+}  // namespace crumb::ports
 
 namespace crumb::application {
 struct ReconcileResult {
@@ -21,11 +25,10 @@ struct ReconcileResult {
 class ReconcileDirectory {
    public:
     ReconcileDirectory(ports::ManifestRepository& manifests, ports::FileSystem& filesystem,
-                       ports::FingerprintService& fingerprints, ports::MetadataExtractor& extractor,
+                       ports::FingerprintService&, ports::MetadataExtractor& extractor,
                        ports::IdGenerator& ids, ports::Clock& clock)
         : manifests_(manifests),
           filesystem_(filesystem),
-          fingerprints_(fingerprints),
           extractor_(extractor),
           ids_(ids),
           clock_(clock) {}
@@ -36,7 +39,7 @@ class ReconcileDirectory {
    private:
     ports::ManifestRepository& manifests_;
     ports::FileSystem& filesystem_;
-    ports::FingerprintService& fingerprints_;
+
     ports::MetadataExtractor& extractor_;
     ports::IdGenerator& ids_;
     ports::Clock& clock_;
