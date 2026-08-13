@@ -27,7 +27,9 @@ SearchResult to_result(const domain::SearchIndex& index, const domain::SearchQue
                        std::size_t limit, const MetadataByLocation& metadata = {}) {
     SearchResult result;
     result.inspected = index.documents.size();
-    for (const auto& hit : index.search(query)) {
+    auto hits = index.search(query);
+    if (hits.empty() && query.words().size() > 1) hits = index.search_relaxed(query);
+    for (const auto& hit : hits) {
         const auto& location = index.documents[hit.document_id];
         const auto key = Location{location.directory.value(), location.name.value()};
         if (const auto found = metadata.find(key); found != metadata.end()) {

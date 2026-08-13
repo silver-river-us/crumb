@@ -53,7 +53,7 @@ std::expected<ReconcileResult, std::string> ReconcileDirectory::execute(
             manifest.files()[matched].metadata.created_ns == snapshot.metadata.created_ns &&
             manifest.files()[matched].fingerprint.value() == snapshot.fingerprint.value() &&
             manifest.files()[matched].metadata.external_url == snapshot.metadata.external_url &&
-            manifest.files()[matched].metadata.extension_fields.contains("crumb.search_terms_v2")) {
+            manifest.files()[matched].metadata.extension_fields.contains("crumb.search_terms_v3")) {
             observed[matched] = true;
             continue;
         }

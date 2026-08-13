@@ -53,7 +53,7 @@ build/crumb search "technical proposal" --limit 10
 build/crumb search path/to/directory "technical proposal" --limit 10
 ```
 
-Search uses case insensitive fuzzy matching and rank weighting over file names, directory paths, metadata, tags, extension fields, and persisted index terms. Results with equal relevance are ordered newest-first by creation date, then edit date. Every indexed file has a stable `fid:` reference derived from its manifest identity; use that ID in future metadata commands. Multi-word queries require every term to match the same result; common `document`/`documents` queries also match abbreviated `docs` folders.
+Search uses case insensitive fuzzy matching and rank weighting over file names, directory paths, metadata, tags, extension fields, and persisted index terms. Results with equal relevance are ordered newest-first by creation date, then edit date. Every indexed file has a stable `fid:` reference derived from its manifest identity; use that ID in future metadata commands. Multi-word queries first require every query term to match the same result; if that produces no results, Crumb returns ranked partial matches so natural-language queries still surface useful guidance.
 
 Search displays full result cards by default. Use `--table` for a PostgreSQL-style result table with inline clickable links; interactive table output opens in a scrollable pager. `--full` and `--details` remain accepted aliases for the default card view.
 

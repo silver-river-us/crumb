@@ -6,7 +6,7 @@
 #include "domain/value_objects/value_objects.hpp"
 
 #include <algorithm>
-#include <cctype>
+
 #include <cstdint>
 #include <cmath>
 #include <expected>
@@ -24,35 +24,43 @@ namespace crumb::domain {
 
 class SearchQuery {
    public:
-    [[nodiscard]] static std::expected<SearchQuery, std::string> create(std::string_view value) {
+    [[nodiscard]] static std::vector<std::string> tokenize(std::string_view value) {
         std::vector<std::string> words;
         std::string current;
         const auto add = [&words](std::string word) {
-            if (word.size() >= 3 && std::ranges::find(words, word) == words.end()) {
+            if (!word.empty() && std::ranges::find(words, word) == words.end())
                 words.push_back(std::move(word));
-            }
         };
-
-        for (const char character : value) {
-            const auto byte = static_cast<unsigned char>(character);
-            if (std::isalnum(byte) || character == '_') {
-                current.push_back(static_cast<char>(std::tolower(byte)));
-            } else if (!current.empty()) {
+        const auto flush = [&] {
+            if (!current.empty()) {
                 add(std::move(current));
                 current.clear();
             }
+        };
+
+        for (const auto character : value) {
+            const auto byte = static_cast<unsigned char>(character);
+            if (byte >= 0x80 || std::isalnum(byte) || character == '_') {
+                current.push_back(byte >= 'A' && byte <= 'Z' ? static_cast<char>(byte - 'A' + 'a')
+                                                             : character);
+            } else {
+                flush();
+            }
         }
-        if (!current.empty()) add(std::move(current));
-        if (words.empty())
-            return std::unexpected("search query must contain a word with at least 3 characters");
+        flush();
+        return words;
+    }
+
+    [[nodiscard]] static std::expected<SearchQuery, std::string> create(std::string_view value) {
+        auto words = tokenize(value);
+        if (words.empty()) return std::unexpected("search query must contain a word");
         return SearchQuery(std::move(words));
     }
 
     [[nodiscard]] const std::vector<std::string>& words() const noexcept { return words_; }
 
     [[nodiscard]] static bool fuzzy_contains(const std::string& value, const std::string& word) {
-        const auto documents_alias = value == "docs" && (word == "document" || word == "documents");
-        if (documents_alias) return true;
+        if (word.size() < 3) return value == word;
         const auto prefix_length = std::max<std::size_t>(4, word.size() - 2);
         return value.find(word) != std::string::npos ||
                value.find(word.substr(0, prefix_length)) != std::string::npos;
@@ -93,6 +101,16 @@ struct SearchIndex {
     };
 
     [[nodiscard]] std::vector<SearchHit> search(const SearchQuery& query) const {
+        return search_matching(query, true);
+    }
+
+    [[nodiscard]] std::vector<SearchHit> search_relaxed(const SearchQuery& query) const {
+        return search_matching(query, false);
+    }
+
+   private:
+    [[nodiscard]] std::vector<SearchHit> search_matching(const SearchQuery& query,
+                                                         bool require_all_terms) const {
         std::map<std::uint32_t, double> scores;
         std::map<std::uint32_t, std::size_t> matched_words;
         const auto total = static_cast<double>(documents.size());
@@ -103,13 +121,6 @@ struct SearchIndex {
                                                         [](const auto& term) { return term.term; });
             if (exact != terms.end() && exact->term == word) {
                 matching_terms.push_back(&*exact);
-                if (word == "document" || word == "documents") {
-                    const auto docs =
-                        std::ranges::lower_bound(terms, std::string_view("docs"), {},
-                                                 [](const auto& term) { return term.term; });
-                    if (docs != terms.end() && docs->term == "docs")
-                        matching_terms.push_back(&*docs);
-                }
             } else {
                 for (const auto& term : terms) {
                     if (SearchQuery::fuzzy_contains(term.term, word))
@@ -134,7 +145,7 @@ struct SearchIndex {
         std::vector<SearchHit> hits;
         for (const auto& [document_id, score] : scores) {
             if (score > 0.0 && document_id < documents.size() &&
-                matched_words[document_id] == query.words().size()) {
+                (!require_all_terms || matched_words[document_id] == query.words().size())) {
                 hits.push_back({document_id, score});
             }
         }
@@ -182,21 +193,7 @@ class SearchIndexBuilder {
    private:
     static void add_terms(std::unordered_map<std::string, std::uint32_t>& terms,
                           std::string_view text) {
-        std::string current;
-        const auto add = [&terms](std::string word) {
-            if (word.size() >= 3) ++terms[std::move(word)];
-        };
-
-        for (const char character : text) {
-            const auto byte = static_cast<unsigned char>(character);
-            if (std::isalnum(byte) || character == '_') {
-                current.push_back(static_cast<char>(std::tolower(byte)));
-            } else if (!current.empty()) {
-                add(std::move(current));
-                current.clear();
-            }
-        }
-        if (!current.empty()) add(std::move(current));
+        for (auto word : SearchQuery::tokenize(text)) ++terms[std::move(word)];
     }
 
     SearchIndex index_;

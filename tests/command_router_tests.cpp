@@ -227,8 +227,8 @@ int main() {
         assert(empty_limit.status == 2);
         auto too_many = run(router, {"crumb", "search", "one", "two", "three"});
         assert(too_many.status == 2);
-        auto bad_query = run(router, {"crumb", "search", "a"});
-        assert(bad_query.status == 1);
+        auto short_query = run(router, {"crumb", "search", "a"});
+        assert(short_query.status == 0);
 
         auto scan = run(router, {"crumb", "scan", "."});
         assert(scan.status == 0 && scan.output.find("scanned=") != std::string::npos);
