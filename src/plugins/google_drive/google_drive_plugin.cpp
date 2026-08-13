@@ -184,7 +184,7 @@ std::optional<std::string> command_output(const std::string& command, std::size_
             ::close(descriptors[0]);
             return std::nullopt;
         }
-        struct pollfd descriptor{descriptors[0], POLLIN, 0};
+        struct pollfd descriptor = {descriptors[0], POLLIN, 0};
         const auto polled = ::poll(&descriptor, 1, static_cast<int>(remaining.count()));
         if (polled < 0 && errno != EINTR) break;
         if (polled > 0 && (descriptor.revents & (POLLIN | POLLHUP))) {
@@ -389,7 +389,7 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> DriveFileSystem::l
             metadata.type = mime_type(name.value());
             metadata.size = item.file_size();
             metadata.modified_ns = file_time_ns(item.last_write_time());
-            struct stat info{};
+            struct stat info = {};
             if (::stat(item.path().c_str(), &info) == 0) {
                 metadata.inode = static_cast<std::uintmax_t>(info.st_ino);
                 metadata.device = static_cast<std::uintmax_t>(info.st_dev);

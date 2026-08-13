@@ -94,9 +94,9 @@ void pager_helper() {
     crumb::boundary::testing::print_search_table_for_test(ignored, path("/tmp/root"),
                                                           result_with_url(), true);
 
-    struct rlimit old_limit{};
+    struct rlimit old_limit = {};
     assert(::getrlimit(RLIMIT_NOFILE, &old_limit) == 0);
-    struct rlimit exhausted_limit{0, old_limit.rlim_max};
+    struct rlimit exhausted_limit = {0, old_limit.rlim_max};
     assert(::setrlimit(RLIMIT_NOFILE, &exhausted_limit) == 0);
     std::ostringstream fallback;
     crumb::boundary::testing::print_search_table_for_test(fallback, path("/tmp/root"),
