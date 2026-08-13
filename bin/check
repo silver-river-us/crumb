@@ -4,6 +4,89 @@ set -eu
 root_dir=${0%/*}/..
 cd "$root_dir"
 
-cmake -S . -B build -DCRUMB_WARNINGS_AS_ERRORS=ON
-cmake --build build
-cmake --build build --target lint format-check cppcheck iwyu
+require_command() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "error: required command not found: $1" >&2
+        exit 127
+    fi
+}
+
+require_command_or_homebrew_llvm() {
+    if command -v "$1" >/dev/null 2>&1 || \
+        [ -x "/opt/homebrew/opt/llvm/bin/$1" ] || \
+        [ -x "/usr/local/opt/llvm/bin/$1" ]; then
+        return
+    fi
+    echo "error: required command not found: $1" >&2
+    exit 127
+}
+
+for command in cmake ninja clang clang++ cppcheck; do
+    require_command "$command"
+done
+require_command_or_homebrew_llvm clang-tidy
+require_command_or_homebrew_llvm clang-format
+if ! command -v iwyu_tool.py >/dev/null 2>&1 && ! command -v iwyu_tool >/dev/null 2>&1; then
+    echo "error: required command not found: iwyu_tool.py or iwyu_tool" >&2
+    exit 127
+fi
+scan_build_command=$(command -v scan-build 2>/dev/null || true)
+if [ -z "$scan_build_command" ]; then
+    for candidate in /opt/homebrew/opt/llvm/bin/scan-build /usr/local/opt/llvm/bin/scan-build; do
+        if [ -x "$candidate" ]; then
+            scan_build_command=$candidate
+            break
+        fi
+    done
+fi
+if [ -z "$scan_build_command" ]; then
+    echo "error: required command not found: scan-build (install LLVM with: brew install llvm)" >&2
+    exit 127
+fi
+
+section() {
+    printf '\n==> %s\n' "$1"
+}
+
+export CXX=clang++
+export CXXFLAGS=-stdlib=libc++
+export LDFLAGS=-stdlib=libc++
+
+section "Static checks and tests"
+cmake --preset default \
+    -D CMAKE_CXX_COMPILER=clang++ \
+    -D CMAKE_CXX_FLAGS=-stdlib=libc++ \
+    -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++ \
+    -D CRUMB_WARNINGS_AS_ERRORS=ON
+cmake --build --preset default
+cmake --build build --target lint
+cmake --build build --target format-check
+cmake --build build --target cppcheck
+cmake --build build --target iwyu
+ctest --preset default
+
+scan_build() {
+    "$scan_build_command" --status-bugs \
+        -enable-checker cplusplus.NewDeleteLeaks \
+        -enable-checker unix.Malloc \
+        -enable-checker unix.MismatchedDeallocator \
+        --use-cc clang --use-c++ clang++ "$@"
+}
+
+section "Static memory ownership analysis"
+scan_build cmake -S . -B build/static-memory-analysis \
+    -D CMAKE_BUILD_TYPE=Debug \
+    -D BUILD_TESTING=ON \
+    -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -D CMAKE_CXX_FLAGS=-stdlib=libc++ \
+    -D CMAKE_EXE_LINKER_FLAGS=-stdlib=libc++
+scan_build cmake --build build/static-memory-analysis
+
+section "AddressSanitizer and UndefinedBehaviorSanitizer"
+ASAN_OPTIONS=alloc_dealloc_mismatch=0 "$root_dir/bin/sanitize" asan-ubsan
+
+section "ThreadSanitizer"
+"$root_dir/bin/sanitize" tsan
+
+section "LLVM coverage report"
+"$root_dir/bin/coverage"

@@ -1,4 +1,5 @@
 #include "infrastructure/hashing/streaming_hash.hpp"
+#include <array>
 #include <fstream>
 #include <iomanip>
 #include <sstream>

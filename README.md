@@ -28,13 +28,13 @@ bin/lint                         # clang-tidy
 cmake --build build --target format-check
 cmake --build build --target cppcheck
 cmake --build build --target iwyu
-bin/check                        # all static checks
+bin/check                        # all CI checks locally
 bin/sanitize asan-ubsan          # Address + Undefined Behavior sanitizers
 bin/sanitize tsan                # Thread sanitizer
 bin/coverage                      # LLVM source-based coverage report
 ```
 
-`bin/check` configures the build with `CRUMB_WARNINGS_AS_ERRORS=ON`, then requires all three Homebrew packages for the static analyzers. The sanitizer commands build and test into dedicated `build/asan-ubsan` and `build/tsan` directories. `bin/coverage` uses the LLVM tools that match the compiler (Xcode’s tools on macOS) and reports coverage for `src/`, excluding tests and system headers.
+`bin/check` runs the complete CI quality suite locally: static checks and tests, Clang Static Analyzer memory ownership checks, ASan/UBSan, TSan, and the LLVM coverage report. It requires the CI toolchain (`clang`, `clang-tidy`, `clang-format`, `cppcheck`, Include-What-You-Use, `scan-build`, CMake, and Ninja). The sanitizer commands build and test into dedicated `build/asan-ubsan` and `build/tsan` directories. `bin/coverage` uses the LLVM tools that match the compiler (Xcode’s tools on macOS) and reports coverage for `src/`, excluding tests and system headers.
 
 The CI sanitizer jobs have focused purposes: AddressSanitizer (ASan) detects memory errors, UndefinedBehaviorSanitizer (UBSan) detects invalid C++ operations, and ThreadSanitizer (TSan) detects data races and other threading errors.
 
