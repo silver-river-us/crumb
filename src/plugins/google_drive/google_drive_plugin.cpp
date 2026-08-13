@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <array>
-#include <cctype>
+
 #include <chrono>
 #include <cerrno>
 #include <cstdio>
@@ -119,34 +119,7 @@ bool is_ignored_file(const std::filesystem::path& path) {
 }
 
 std::string search_terms(std::string_view content) {
-    constexpr std::array stopwords{
-        "a",    "about", "after",   "all",   "an",     "and",    "any",     "are",   "as",
-        "at",   "be",    "because", "been",  "before", "being",  "between", "both",  "but",
-        "by",   "can",   "could",   "did",   "do",     "does",   "for",     "from",  "had",
-        "has",  "have",  "how",     "if",    "in",     "into",   "is",      "it",    "its",
-        "may",  "might", "more",    "most",  "no",     "nor",    "not",     "of",    "on",
-        "or",   "our",   "out",     "over",  "same",   "should", "so",      "some",  "such",
-        "than", "that",  "the",     "their", "them",   "then",   "there",   "these", "they",
-        "this", "those", "to",      "too",   "under",  "until",  "was",     "were",  "what",
-        "when", "where", "which",   "while", "who",    "why",    "with",    "would", "you",
-        "your"};
-    std::vector<std::string> terms;
-    std::string current;
-    const auto add = [&terms](std::string word) {
-        if (word.size() < 3 || std::ranges::find(terms, word) != terms.end()) return;
-        terms.push_back(std::move(word));
-    };
-    for (const char character : content) {
-        const auto byte = static_cast<unsigned char>(character);
-        if (std::isalnum(byte) || character == '_') {
-            current.push_back(static_cast<char>(std::tolower(byte)));
-        } else if (!current.empty()) {
-            if (std::ranges::find(stopwords, current) == stopwords.end()) add(std::move(current));
-            current.clear();
-        }
-    }
-    if (!current.empty() && std::ranges::find(stopwords, current) == stopwords.end())
-        add(std::move(current));
+    auto terms = domain::SearchQuery::tokenize(content);
     std::ranges::sort(terms);
     std::string result = "|";
     for (const auto& term : terms) {
@@ -484,7 +457,7 @@ std::expected<domain::FileMetadata, std::string> DriveMetadataExtractor::extract
     auto content = extract_plain_text(path);
     if (!content) content = extract_office_text(path);
     if (content) {
-        metadata.extension_fields["crumb.search_terms_v2"] = search_terms(*content);
+        metadata.extension_fields["crumb.search_terms_v3"] = search_terms(*content);
     }
     return metadata;
 }

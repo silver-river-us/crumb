@@ -1,9 +1,9 @@
 #include "infrastructure/filesystem/native_filesystem.hpp"
 #include "infrastructure/hashing/streaming_hash.hpp"
+#include "domain/search_index.hpp"
 #include <chrono>
 #include <algorithm>
-#include <array>
-#include <cctype>
+
 #include <fstream>
 #include <iterator>
 #include <string_view>
@@ -24,40 +24,9 @@ std::string mime(const std::string& name) {
     if (ext == "toml") return "application/toml";
     return "application/octet_stream";
 }
-bool is_stopword(std::string_view word) {
-    constexpr std::array stopwords{
-        "a",    "about", "after",   "all",   "an",     "and",    "any",     "are",   "as",
-        "at",   "be",    "because", "been",  "before", "being",  "between", "both",  "but",
-        "by",   "can",   "could",   "did",   "do",     "does",   "for",     "from",  "had",
-        "has",  "have",  "how",     "if",    "in",     "into",   "is",      "it",    "its",
-        "may",  "might", "more",    "most",  "no",     "nor",    "not",     "of",    "on",
-        "or",   "our",   "out",     "over",  "same",   "should", "so",      "some",  "such",
-        "than", "that",  "the",     "their", "them",   "then",   "there",   "these", "they",
-        "this", "those", "to",      "too",   "under",  "until",  "was",     "were",  "what",
-        "when", "where", "which",   "while", "who",    "why",    "with",    "would", "you",
-        "your"};
-    return std::ranges::find(stopwords, word) != stopwords.end();
-}
 
 std::string search_terms(std::string_view content) {
-    std::vector<std::string> terms;
-    std::string current;
-    const auto add = [&terms](std::string word) {
-        if (word.size() >= 3 && !is_stopword(word) &&
-            std::ranges::find(terms, word) == terms.end()) {
-            terms.push_back(std::move(word));
-        }
-    };
-    for (const char character : content) {
-        const auto byte = static_cast<unsigned char>(character);
-        if (std::isalnum(byte) || character == '_') {
-            current.push_back(static_cast<char>(std::tolower(byte)));
-        } else if (!current.empty()) {
-            add(std::move(current));
-            current.clear();
-        }
-    }
-    if (!current.empty()) add(std::move(current));
+    auto terms = domain::SearchQuery::tokenize(content);
     std::ranges::sort(terms);
 
     std::string result = "|";
@@ -113,7 +82,7 @@ std::expected<domain::FileMetadata, std::string> NativeFileSystem::extract(
     base.title = name.value().substr(0, dot);
     auto content = read_text_file(directory, name);
     if (content && content.value())
-        base.extension_fields["crumb.search_terms_v2"] = search_terms(*content.value());
+        base.extension_fields["crumb.search_terms_v3"] = search_terms(*content.value());
     return base;
 }
 std::expected<std::vector<std::pair<domain::DirectoryPath, domain::FileName>>, std::string>

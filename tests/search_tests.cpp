@@ -97,7 +97,7 @@ int main() {
     proposal_metadata.created_ns = 1;
     proposal_metadata.modified_ns = 11;
     proposal_metadata.tags = {"architecture", "design"};
-    proposal_metadata.extension_fields["crumb.search_terms_v2"] =
+    proposal_metadata.extension_fields["crumb.search_terms_v3"] =
         "this document describes domain driven design";
     proposal_metadata.extension_fields["shared"] = "contract";
     manifest.add({FileId::create("01K1ADN1ZC5R7H4XB8QKMP2TV6"), FileName::create("proposal.md"),
@@ -185,11 +185,41 @@ int main() {
     auto empty_query = search.execute(directory, "");
     assert(!empty_query.has_value());
 
+    auto natural_language_query =
+        SearchQuery::create("how to find a technical proposal and annual report");
+    assert(natural_language_query.has_value());
+    assert(natural_language_query->words().size() == 9);
+    assert(natural_language_query->words()[0] == "how");
+    assert(natural_language_query->words()[1] == "to");
+    assert(natural_language_query->words()[2] == "find");
+    assert(natural_language_query->words()[3] == "a");
+    assert(natural_language_query->words()[4] == "technical");
+    assert(natural_language_query->words()[5] == "proposal");
+    assert(natural_language_query->words()[6] == "and");
+    assert(natural_language_query->words()[7] == "annual");
+    assert(natural_language_query->words()[8] == "report");
+    const auto multilingual_query = SearchQuery::create("cómo empezar");
+    assert(multilingual_query.has_value());
+    assert(multilingual_query->words().size() == 2);
+    assert(multilingual_query->words()[0] == "cómo");
+    assert(multilingual_query->words()[1] == "empezar");
+
+    SearchIndexBuilder relaxed_builder;
+    relaxed_builder.add(directory, repository.manifest->files()[0]);
+    relaxed_builder.add(directory, repository.manifest->files()[1]);
+    const auto relaxed_index = std::move(relaxed_builder).build();
+    assert(relaxed_index.search(*natural_language_query).empty());
+    assert(!relaxed_index.search_relaxed(*natural_language_query).empty());
+    auto relaxed_match =
+        search.execute(directory, "how to find a technical proposal and annual report");
+    assert(relaxed_match.has_value());
+    assert(!relaxed_match->matches.empty());
+
     SearchIndexBuilder path_builder;
     path_builder.add(DirectoryPath::create("Shared drives/Internal Docs/Contracts"),
                      repository.manifest->files().front());
     auto path_index = std::move(path_builder).build();
-    auto path_query = SearchQuery::create("internal documents contracts");
+    auto path_query = SearchQuery::create("internal docs contracts");
     assert(path_query.has_value());
     assert(path_index.search(*path_query).size() == 1);
 
@@ -201,13 +231,10 @@ int main() {
     assert(conjunction_query.has_value());
     assert(conjunction_index.search(*conjunction_query).empty());
 
-    SearchIndexBuilder document_alias_builder;
-    document_alias_builder.add(DirectoryPath::create("Internal Docs"),
-                               repository.manifest->files()[0]);
-    document_alias_builder.add(DirectoryPath::create("Internal Documents"),
-                               repository.manifest->files()[1]);
-    auto document_alias_index = std::move(document_alias_builder).build();
-    auto document_alias_query = SearchQuery::create("documents");
-    assert(document_alias_query.has_value());
-    assert(document_alias_index.search(*document_alias_query).size() == 2);
+    SearchIndexBuilder short_term_builder;
+    short_term_builder.add(DirectoryPath::create("A"), repository.manifest->files()[0]);
+    auto short_term_index = std::move(short_term_builder).build();
+    auto short_term_query = SearchQuery::create("a");
+    assert(short_term_query.has_value());
+    assert(short_term_index.search(*short_term_query).size() == 1);
 }

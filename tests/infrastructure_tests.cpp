@@ -351,7 +351,7 @@ void native_and_hash_tests(const std::filesystem::path& root) {
                                         domain::FileName::create("a.md"), {});
     assert(extracted.has_value());
     assert(extracted->title == "a");
-    assert(extracted->extension_fields.at("crumb.search_terms_v2").find("document") !=
+    assert(extracted->extension_fields.at("crumb.search_terms_v3").find("document") !=
            std::string::npos);
     auto binary_extract = filesystem.extract(domain::DirectoryPath::create(root.string()),
                                              domain::FileName::create("unknown.bin"), {});

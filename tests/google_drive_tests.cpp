@@ -241,10 +241,10 @@ void filesystem_tests(const std::filesystem::path& root) {
     assert(metadata.has_value());
     assert(metadata->title == "a");
 #ifdef __APPLE__
-    assert(metadata->extension_fields.at("crumb.search_terms_v2").find("drive") !=
+    assert(metadata->extension_fields.at("crumb.search_terms_v3").find("drive") !=
            std::string::npos);
 #else
-    assert(!metadata->extension_fields.contains("crumb.search_terms_v2"));
+    assert(!metadata->extension_fields.contains("crumb.search_terms_v3"));
 #endif
     auto office = extractor.extract(domain::DirectoryPath::create((root / "nested").string()),
                                     domain::FileName::create("note.doc"), {});
