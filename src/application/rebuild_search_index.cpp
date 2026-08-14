@@ -1,4 +1,5 @@
 #include "application/rebuild_search_index.hpp"
+#include "domain/search_index/builder.hpp"
 
 namespace crumb::application {
 std::expected<void, std::string> RebuildSearchIndex::execute(

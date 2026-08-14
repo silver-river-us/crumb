@@ -5,3 +5,9 @@
 #include "domain/search_index/builder.hpp"
 #include "domain/search_index/index.hpp"
 #include "domain/search_index/query.hpp"
+
+namespace crumb::domain::search {
+using Builder = SearchIndexBuilder;
+using Index = SearchIndex;
+using Query = SearchQuery;
+}  // namespace crumb::domain::search

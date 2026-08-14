@@ -1,6 +1,6 @@
 #include "infrastructure/filesystem/native_filesystem.hpp"
 #include "infrastructure/hashing/streaming_hash.hpp"
-#include "domain/search_index.hpp"
+#include "domain/search_index/query.hpp"
 #include <chrono>
 #include <algorithm>
 

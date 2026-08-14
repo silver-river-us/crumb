@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/search_index.hpp"
+#include "domain/search_index/index.hpp"
 #include <cstdint>
 #include <expected>
 #include <string>

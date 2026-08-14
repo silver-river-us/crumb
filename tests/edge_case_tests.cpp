@@ -1,10 +1,12 @@
 #include "application/rebuild_search_index.hpp"
+
 #include "application/search_manifest.hpp"
 #include "domain/directory_manifest.hpp"
 #include "domain/value_objects/content_hash.hpp"
 #include "domain/value_objects/directory_id.hpp"
 #include "domain/value_objects/file_id.hpp"
 #include "domain/value_objects/fingerprint.hpp"
+#include "domain/value_objects/value_objects.hpp"
 
 #include "domain/file_identity_matcher.hpp"
 

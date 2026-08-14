@@ -1,6 +1,8 @@
 #pragma once
 
+#include "domain/file_entry.hpp"
 #include "domain/search_index/index.hpp"
+#include "domain/value_objects/value_objects.hpp"
 
 #include <cstdint>
 #include <string>

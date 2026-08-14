@@ -1,4 +1,6 @@
 #include "infrastructure/filesystem/native_filesystem.hpp"
+#include "domain/search_index/builder.hpp"
+
 #include "infrastructure/hashing/streaming_hash.hpp"
 #include "infrastructure/persistence/binary_search_index_repository.hpp"
 #include "infrastructure/persistence/toml_manifest_mapper.hpp"
