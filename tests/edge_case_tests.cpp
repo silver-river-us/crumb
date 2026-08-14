@@ -1,6 +1,6 @@
 #include "application/rebuild_search_index.hpp"
 
-#include "application/search_manifest.hpp"
+#include "application/search_manifest/search.hpp"
 #include "domain/directory_manifest.hpp"
 #include "domain/value_objects/content_hash.hpp"
 #include "domain/value_objects/directory_id.hpp"

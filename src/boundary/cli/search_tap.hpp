@@ -1,6 +1,6 @@
 #pragma once
 
-#include "application/search_manifest.hpp"
+#include "application/search_manifest/result.hpp"
 
 #include <cstdint>
 #include <ctime>

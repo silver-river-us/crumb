@@ -1,4 +1,4 @@
-#include "plugins/google_drive/google_drive_plugin.hpp"
+#include "plugins/google_drive/google_drive_plugin/testing.hpp"
 
 #include <cassert>
 #include <chrono>

@@ -1,47 +1,9 @@
 #pragma once
 
-#include "domain/value_objects/directory_path.hpp"
+#include "application/reconcile_directory/reconcile.hpp"
+#include "application/reconcile_directory/result.hpp"
 
-#include <cstddef>
-#include <expected>
-#include <string>
-
-namespace crumb::ports {
-class Clock;
-class FileSystem;
-class FingerprintService;
-class IdGenerator;
-class ManifestRepository;
-class MetadataExtractor;
-}  // namespace crumb::ports
-
-namespace crumb::application {
-struct ReconcileResult {
-    std::size_t scanned{};
-    std::size_t added{};
-    std::size_t updated{};
-    std::size_t removed{};
-};
-class ReconcileDirectory {
-   public:
-    ReconcileDirectory(ports::ManifestRepository& manifests, ports::FileSystem& filesystem,
-                       ports::FingerprintService&, ports::MetadataExtractor& extractor,
-                       ports::IdGenerator& ids, ports::Clock& clock)
-        : manifests_(manifests),
-          filesystem_(filesystem),
-          extractor_(extractor),
-          ids_(ids),
-          clock_(clock) {}
-    std::expected<ReconcileResult, std::string> execute(const domain::DirectoryPath& directory);
-    std::expected<ReconcileResult, std::string> execute_recursive(
-        const domain::DirectoryPath& directory);
-
-   private:
-    ports::ManifestRepository& manifests_;
-    ports::FileSystem& filesystem_;
-
-    ports::MetadataExtractor& extractor_;
-    ports::IdGenerator& ids_;
-    ports::Clock& clock_;
-};
-}  // namespace crumb::application
+namespace crumb::application::reconcile {
+using Reconcile = ReconcileDirectory;
+using Result = ReconcileResult;
+}  // namespace crumb::application::reconcile

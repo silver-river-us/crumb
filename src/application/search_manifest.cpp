@@ -1,4 +1,4 @@
-#include "application/search_manifest.hpp"
+#include "application/search_manifest/search.hpp"
 #include "domain/search_index/builder.hpp"
 #include "domain/search_index/query.hpp"
 #include "domain/value_objects/value_objects.hpp"

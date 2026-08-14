@@ -1,15 +1,15 @@
 #pragma once
 #include "application/index_size.hpp"
-#include "application/reconcile_directory.hpp"
+#include "application/reconcile_directory/reconcile.hpp"
 #include "application/rebuild_search_index.hpp"
-#include "application/search_manifest.hpp"
+#include "application/search_manifest/search.hpp"
 #include "infrastructure/filesystem/native_filesystem.hpp"
 #include "infrastructure/hashing/streaming_hash.hpp"
 #include "infrastructure/persistence/toml_manifest_repository.hpp"
 #include "infrastructure/persistence/binary_search_index_repository.hpp"
 #include "infrastructure/system/system_clock.hpp"
 #include "infrastructure/system/ulid_generator.hpp"
-#include "plugins/google_drive/google_drive_plugin.hpp"
+#include "plugins/google_drive/google_drive_plugin/plugin.hpp"
 namespace crumb::infrastructure {
 struct ApplicationComponents {
     TomlManifestRepository manifests;

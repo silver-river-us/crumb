@@ -2,11 +2,11 @@
 #include <cstdio>
 #include <ostream>
 #include "application/index_size.hpp"
-#include "application/reconcile_directory.hpp"
+#include "application/reconcile_directory/reconcile.hpp"
 #include "application/rebuild_search_index.hpp"
-#include "application/search_manifest.hpp"
+#include "application/search_manifest/search.hpp"
 #include "boundary/cli/user_config.hpp"
-#include "plugins/google_drive/google_drive_plugin.hpp"
+#include "plugins/google_drive/google_drive_plugin/plugin.hpp"
 namespace crumb::boundary {
 
 namespace testing {

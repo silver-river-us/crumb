@@ -40,7 +40,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         endforeach()
     endif()
 endif()
-
 add_library(crumb_lib INTERFACE)
 target_include_directories(crumb_lib INTERFACE src src/lib)
 target_compile_features(crumb_lib INTERFACE cxx_std_23)
@@ -66,7 +65,13 @@ target_include_directories(crumb_infrastructure PUBLIC src src/lib)
 target_link_libraries(crumb_infrastructure PRIVATE crumb_lib ZLIB::ZLIB Threads::Threads)
 
 add_library(crumb_google_drive
-    src/plugins/google_drive/google_drive_plugin.cpp
+    src/plugins/google_drive/google_drive_plugin/details.cpp
+    src/plugins/google_drive/google_drive_plugin/drive_file_system.cpp
+    src/plugins/google_drive/google_drive_plugin/drive_manifest_repository.cpp
+    src/plugins/google_drive/google_drive_plugin/drive_metadata_extractor.cpp
+    src/plugins/google_drive/google_drive_plugin/drive_search_index_repository.cpp
+    src/plugins/google_drive/google_drive_plugin/plugin.cpp
+    src/plugins/google_drive/google_drive_plugin/testing.cpp
 )
 target_include_directories(crumb_google_drive PUBLIC src src/lib)
 target_link_libraries(crumb_google_drive PUBLIC crumb_application crumb_infrastructure)
@@ -111,7 +116,13 @@ if(CLANG_TIDY_EXECUTABLE)
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/toml_manifest_repository.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/system/system_clock.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/system/ulid_generator.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/details.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_file_system.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_manifest_repository.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_metadata_extractor.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_search_index_repository.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/plugin.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/testing.cpp
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-tidy"
         VERBATIM)
