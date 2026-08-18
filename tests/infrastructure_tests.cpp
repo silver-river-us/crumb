@@ -1,10 +1,10 @@
-#include "infrastructure/filesystem/native_filesystem.hpp"
-#include "domain/search_index/builder.hpp"
+#include "files/infrastructure/native_filesystem.hpp"
+#include "search/domain/search_index/builder.hpp"
 
-#include "infrastructure/hashing/streaming_hash.hpp"
-#include "infrastructure/persistence/binary_search_index_repository.hpp"
-#include "infrastructure/persistence/toml_manifest_mapper.hpp"
-#include "infrastructure/persistence/toml_manifest_repository.hpp"
+#include "files/infrastructure/streaming_hash.hpp"
+#include "search/infrastructure/binary_search_index_repository.hpp"
+#include "manifests/infrastructure/toml_manifest_mapper.hpp"
+#include "manifests/infrastructure/toml_manifest_repository.hpp"
 
 #include <cassert>
 #include <chrono>

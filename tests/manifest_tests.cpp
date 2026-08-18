@@ -1,5 +1,5 @@
-#include "domain/directory_manifest.hpp"
-#include "infrastructure/persistence/toml_manifest_mapper.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "manifests/infrastructure/toml_manifest_mapper.hpp"
 
 #include <cassert>
 #include <string>

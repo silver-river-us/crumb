@@ -1,8 +1,8 @@
-#include "application/search_manifest/search.hpp"
-#include "application/rebuild_search_index.hpp"
-#include "domain/search_index/builder.hpp"
-#include "domain/search_index/query.hpp"
-#include "domain/value_objects/value_objects.hpp"
+#include "search/application/search_manifest/search.hpp"
+#include "search/application/rebuild_search_index.hpp"
+#include "search/domain/search_index/builder.hpp"
+#include "search/domain/search_index/query.hpp"
+#include "files/domain/value_objects/value_objects.hpp"
 
 #include <cassert>
 #include <map>

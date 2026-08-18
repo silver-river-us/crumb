@@ -1,9 +1,9 @@
-#include "application/reconcile_directory/reconcile.hpp"
-#include "infrastructure/filesystem/native_filesystem.hpp"
-#include "lib/ports/clock.hpp"
-#include "lib/ports/fingerprint_service.hpp"
-#include "lib/ports/id_generator.hpp"
-#include "lib/ports/manifest_repository.hpp"
+#include "manifests/application/reconcile_directory/reconcile.hpp"
+#include "files/infrastructure/native_filesystem.hpp"
+#include "files/application/clock.hpp"
+#include "files/application/fingerprint_service.hpp"
+#include "files/application/id_generator.hpp"
+#include "manifests/application/manifest_repository.hpp"
 
 #include <cassert>
 #include <filesystem>

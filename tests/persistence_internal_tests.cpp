@@ -1,6 +1,6 @@
-#include "boundary/cli/user_config.hpp"
-#include "infrastructure/persistence/binary_search_index_repository.hpp"
-#include "infrastructure/persistence/toml_manifest_repository.hpp"
+#include "presentation/cli/user_config.hpp"
+#include "search/infrastructure/binary_search_index_repository.hpp"
+#include "manifests/infrastructure/toml_manifest_repository.hpp"
 
 #include <zlib.h>
 

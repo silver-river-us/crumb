@@ -1,0 +1,27 @@
+#pragma once
+
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/application/filesystem.hpp"
+#include "manifests/application/manifest_repository.hpp"
+#include "search/application/search_index_repository.hpp"
+
+#include <expected>
+#include <string>
+
+namespace crumb::application {
+
+class RebuildSearchIndex {
+   public:
+    RebuildSearchIndex(ports::ManifestRepository& manifests, ports::FileSystem& filesystem,
+                       ports::SearchIndexRepository& index)
+        : manifests_(manifests), filesystem_(filesystem), index_(index) {}
+
+    [[nodiscard]] std::expected<void, std::string> execute(const domain::DirectoryPath& directory);
+
+   private:
+    ports::ManifestRepository& manifests_;
+    ports::FileSystem& filesystem_;
+    ports::SearchIndexRepository& index_;
+};
+
+}  // namespace crumb::application

@@ -6,5 +6,6 @@
 .crumb.index.tmp
 aicop-result.toml
 
-.qfile/sessions/
-.qfile/rulesets/
+.aicop
+.cache/
+.qfile/

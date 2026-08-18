@@ -1,19 +1,19 @@
-#include "application/rebuild_search_index.hpp"
+#include "search/application/rebuild_search_index.hpp"
 
-#include "application/search_manifest/search.hpp"
-#include "domain/directory_manifest.hpp"
-#include "domain/value_objects/content_hash.hpp"
-#include "domain/value_objects/directory_id.hpp"
-#include "domain/value_objects/file_id.hpp"
-#include "domain/value_objects/fingerprint.hpp"
-#include "domain/value_objects/value_objects.hpp"
+#include "search/application/search_manifest/search.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "files/domain/value_objects/content_hash.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+#include "files/domain/value_objects/value_objects.hpp"
 
-#include "domain/file_identity_matcher.hpp"
+#include "manifests/domain/file_identity_matcher.hpp"
 
-#include "lib/ports/filesystem.hpp"
+#include "files/application/filesystem.hpp"
 
-#include "lib/ports/manifest_repository.hpp"
-#include "lib/ports/search_index_repository.hpp"
+#include "manifests/application/manifest_repository.hpp"
+#include "search/application/search_index_repository.hpp"
 
 #include <cassert>
 #include <optional>

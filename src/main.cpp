@@ -1,6 +1,6 @@
-#include "boundary/cli/command_router.hpp"
-#include "boundary/cli/user_config.hpp"
-#include "infrastructure/composition/application_builder.hpp"
+#include "presentation/cli/command_router.hpp"
+#include "presentation/cli/user_config.hpp"
+#include "composition/application_builder.hpp"
 
 #include <iostream>
 

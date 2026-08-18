@@ -14,13 +14,20 @@ This project has no deployment process. Build artifacts are local command line e
 
 ## Architecture Overview
 
-`lib/domain` owns business rules and value objects. `lib/ports` owns application contracts. `application` owns use case orchestration. `infrastructure` implements ports and owns the composition root. `boundary` translates CLI input and output.
+Crumb uses screaming architecture: top-level source modules name the product
+capabilities rather than technical layers. `files`, `manifests`, and `search`
+each own their domain models, application contracts/use cases, and
+infrastructure adapters. `google_drive` owns its integration adapter,
+`presentation` owns the CLI boundary, and `composition` wires the capabilities
+together.
 
-Key insight: the domain does not depend on delivery or persistence details. Boundaries depend on use cases through explicit contracts.
+Key insight: capabilities own their technical layers. Dependencies cross
+capabilities through explicit contracts, while the CLI remains a presentation
+detail rather than the organizing principle of the source tree.
 
 ## Core Domain Models
 
-`DirectoryManifest` owns the files known for one directory. `FileEntry` links a stable file identity, name, metadata, and fingerprint. `SearchIndex` is a domain projection built from manifest entries. Value objects validate identifiers, paths, names, fingerprints, and content hashes.
+`DirectoryManifest` owns the files known for one directory. `FileEntry` links a stable file identity, name, metadata, and fingerprint. `SearchIndex` is a domain projection built from manifest entries. The `files` capability owns value objects for identifiers, paths, names, fingerprints, and content hashes.
 
 ## Tools
 

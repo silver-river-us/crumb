@@ -40,62 +40,63 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         endforeach()
     endif()
 endif()
-add_library(crumb_lib INTERFACE)
-target_include_directories(crumb_lib INTERFACE src src/lib)
-target_compile_features(crumb_lib INTERFACE cxx_std_23)
-
-add_library(crumb_application
-    src/application/reconcile_directory.cpp
-    src/application/rebuild_search_index.cpp
-    src/application/search_manifest.cpp
+add_library(crumb_files
+    src/files/infrastructure/native_filesystem.cpp
+    src/files/infrastructure/native_filesystem/text.cpp
+    src/files/infrastructure/native_filesystem/walk.cpp
+    src/files/infrastructure/streaming_hash.cpp
+    src/files/infrastructure/system_clock.cpp
+    src/files/infrastructure/ulid_generator.cpp
 )
-target_include_directories(crumb_application PUBLIC src src/lib)
-target_link_libraries(crumb_application PUBLIC crumb_lib)
+target_include_directories(crumb_files PUBLIC src)
+target_compile_features(crumb_files PUBLIC cxx_std_23)
 
-add_library(crumb_infrastructure
-    src/infrastructure/persistence/toml_manifest_mapper.cpp
-    src/infrastructure/persistence/internal/toml_manifest_parser.cpp
-    src/infrastructure/persistence/toml_manifest_repository.cpp
-    src/infrastructure/persistence/binary_search_index_repository.cpp
-    src/infrastructure/persistence/internal/binary_search_index_codec.cpp
-    src/infrastructure/filesystem/native_filesystem.cpp
-    src/infrastructure/filesystem/native_filesystem_text.cpp
-    src/infrastructure/filesystem/native_filesystem_walk.cpp
-    src/infrastructure/hashing/streaming_hash.cpp
-    src/infrastructure/system/system_clock.cpp
-    src/infrastructure/system/ulid_generator.cpp
+add_library(crumb_manifests
+    src/manifests/application/reconcile_directory.cpp
+    src/manifests/infrastructure/toml_manifest_mapper.cpp
+    src/manifests/infrastructure/toml_manifest_mapper/parser.cpp
+    src/manifests/infrastructure/toml_manifest_repository.cpp
 )
-target_include_directories(crumb_infrastructure PUBLIC src src/lib)
-target_link_libraries(crumb_infrastructure PRIVATE crumb_lib ZLIB::ZLIB Threads::Threads)
+target_include_directories(crumb_manifests PUBLIC src)
+target_link_libraries(crumb_manifests PUBLIC crumb_files)
+
+add_library(crumb_search
+    src/search/application/rebuild_search_index.cpp
+    src/search/application/search_manifest.cpp
+    src/search/infrastructure/binary_search_index_repository.cpp
+    src/search/infrastructure/binary_search_index_repository/codec.cpp
+)
+target_include_directories(crumb_search PUBLIC src)
+target_link_libraries(crumb_search PUBLIC crumb_files crumb_manifests ZLIB::ZLIB Threads::Threads)
 
 add_library(crumb_google_drive
-    src/plugins/google_drive/google_drive_plugin/support/details.cpp
-    src/plugins/google_drive/google_drive_plugin/support/command_output.cpp
-    src/plugins/google_drive/google_drive_plugin/support/mount.cpp
-    src/plugins/google_drive/google_drive_plugin/drive_file_system.cpp
-    src/plugins/google_drive/google_drive_plugin/drive_manifest_repository.cpp
-    src/plugins/google_drive/google_drive_plugin/drive_metadata_extractor.cpp
-    src/plugins/google_drive/google_drive_plugin/drive_search_index_repository.cpp
-    src/plugins/google_drive/google_drive_plugin/plugin.cpp
-    src/plugins/google_drive/google_drive_plugin/support/testing.cpp
+    src/google_drive/infrastructure/google_drive_plugin/details.cpp
+    src/google_drive/infrastructure/google_drive_plugin/command_output.cpp
+    src/google_drive/infrastructure/google_drive_plugin/mount.cpp
+    src/google_drive/infrastructure/google_drive_plugin/drive_file_system.cpp
+    src/google_drive/infrastructure/google_drive_plugin/drive_manifest_repository.cpp
+    src/google_drive/infrastructure/google_drive_plugin/drive_metadata_extractor.cpp
+    src/google_drive/infrastructure/google_drive_plugin/drive_search_index_repository.cpp
+    src/google_drive/infrastructure/google_drive_plugin/plugin.cpp
+    src/google_drive/infrastructure/google_drive_plugin/testing.cpp
 )
-target_include_directories(crumb_google_drive PUBLIC src src/lib)
-target_link_libraries(crumb_google_drive PUBLIC crumb_application crumb_infrastructure)
+target_include_directories(crumb_google_drive PUBLIC src)
+target_link_libraries(crumb_google_drive PUBLIC crumb_files crumb_manifests crumb_search)
 
-add_library(crumb_boundary
-    src/boundary/cli/command_router.cpp
-    src/boundary/cli/command_router_options.cpp
-    src/boundary/cli/command_router_output.cpp
-    src/boundary/cli/command_router_table.cpp
-    src/boundary/cli/search_tap.cpp
-    src/boundary/cli/search_tap_html.cpp
-    src/boundary/cli/user_config.cpp
+add_library(crumb_presentation
+    src/presentation/cli/command_router.cpp
+    src/presentation/cli/command_router/options.cpp
+    src/presentation/cli/command_router/output.cpp
+    src/presentation/cli/command_router/table.cpp
+    src/presentation/cli/search_tap.cpp
+    src/presentation/cli/search_tap/html.cpp
+    src/presentation/cli/user_config.cpp
 )
-target_include_directories(crumb_boundary PUBLIC src src/lib)
-target_link_libraries(crumb_boundary PRIVATE crumb_application crumb_google_drive)
+target_include_directories(crumb_presentation PUBLIC src)
+target_link_libraries(crumb_presentation PUBLIC crumb_manifests crumb_search crumb_google_drive)
 
 add_executable(crumb src/main.cpp)
-target_link_libraries(crumb PRIVATE crumb_boundary crumb_google_drive crumb_infrastructure)
+target_link_libraries(crumb PRIVATE crumb_presentation)
 
 find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy
     HINTS /opt/homebrew/opt/llvm/bin /usr/local/opt/llvm/bin)
@@ -113,36 +114,36 @@ if(CLANG_TIDY_EXECUTABLE)
         COMMAND ${CLANG_TIDY_EXECUTABLE} -p ${CMAKE_BINARY_DIR}
                 ${CLANG_TIDY_EXTRA_ARGS}
                 ${CMAKE_SOURCE_DIR}/src/main.cpp
-                ${CMAKE_SOURCE_DIR}/src/application/reconcile_directory.cpp
-                ${CMAKE_SOURCE_DIR}/src/application/rebuild_search_index.cpp
-                ${CMAKE_SOURCE_DIR}/src/application/search_manifest.cpp
-                ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router.cpp
-                ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router_options.cpp
-                ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router_output.cpp
-                ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router_table.cpp
-                ${CMAKE_SOURCE_DIR}/src/boundary/cli/search_tap.cpp
-                ${CMAKE_SOURCE_DIR}/src/boundary/cli/search_tap_html.cpp
-                ${CMAKE_SOURCE_DIR}/src/boundary/cli/user_config.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/filesystem/native_filesystem.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/filesystem/native_filesystem_text.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/filesystem/native_filesystem_walk.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/hashing/streaming_hash.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/binary_search_index_repository.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/internal/binary_search_index_codec.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/toml_manifest_mapper.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/internal/toml_manifest_parser.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/toml_manifest_repository.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/system/system_clock.cpp
-                ${CMAKE_SOURCE_DIR}/src/infrastructure/system/ulid_generator.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/details.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/command_output.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/mount.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_file_system.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_manifest_repository.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_metadata_extractor.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_search_index_repository.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/plugin.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/testing.cpp
+                ${CMAKE_SOURCE_DIR}/src/manifests/application/reconcile_directory.cpp
+                ${CMAKE_SOURCE_DIR}/src/search/application/rebuild_search_index.cpp
+                ${CMAKE_SOURCE_DIR}/src/search/application/search_manifest.cpp
+                ${CMAKE_SOURCE_DIR}/src/presentation/cli/command_router.cpp
+                ${CMAKE_SOURCE_DIR}/src/presentation/cli/command_router/options.cpp
+                ${CMAKE_SOURCE_DIR}/src/presentation/cli/command_router/output.cpp
+                ${CMAKE_SOURCE_DIR}/src/presentation/cli/command_router/table.cpp
+                ${CMAKE_SOURCE_DIR}/src/presentation/cli/search_tap.cpp
+                ${CMAKE_SOURCE_DIR}/src/presentation/cli/search_tap/html.cpp
+                ${CMAKE_SOURCE_DIR}/src/presentation/cli/user_config.cpp
+                ${CMAKE_SOURCE_DIR}/src/files/infrastructure/native_filesystem.cpp
+                ${CMAKE_SOURCE_DIR}/src/files/infrastructure/native_filesystem/text.cpp
+                ${CMAKE_SOURCE_DIR}/src/files/infrastructure/native_filesystem/walk.cpp
+                ${CMAKE_SOURCE_DIR}/src/files/infrastructure/streaming_hash.cpp
+                ${CMAKE_SOURCE_DIR}/src/search/infrastructure/binary_search_index_repository.cpp
+                ${CMAKE_SOURCE_DIR}/src/search/infrastructure/binary_search_index_repository/codec.cpp
+                ${CMAKE_SOURCE_DIR}/src/manifests/infrastructure/toml_manifest_mapper.cpp
+                ${CMAKE_SOURCE_DIR}/src/manifests/infrastructure/toml_manifest_mapper/parser.cpp
+                ${CMAKE_SOURCE_DIR}/src/manifests/infrastructure/toml_manifest_repository.cpp
+                ${CMAKE_SOURCE_DIR}/src/files/infrastructure/system_clock.cpp
+                ${CMAKE_SOURCE_DIR}/src/files/infrastructure/ulid_generator.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/details.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/command_output.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/mount.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/drive_file_system.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/drive_manifest_repository.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/drive_metadata_extractor.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/drive_search_index_repository.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/plugin.cpp
+                ${CMAKE_SOURCE_DIR}/src/google_drive/infrastructure/google_drive_plugin/testing.cpp
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-tidy"
         VERBATIM)
@@ -212,37 +213,37 @@ if(BUILD_TESTING)
         "printf q | script -q /dev/null $<TARGET_FILE:crumb> search . crumb --table")
     set_tests_properties(crumb_interactive_table PROPERTIES WILL_FAIL TRUE)
     add_executable(crumb_manifest_tests tests/manifest_tests.cpp)
-    target_link_libraries(crumb_manifest_tests PRIVATE crumb_infrastructure)
+    target_link_libraries(crumb_manifest_tests PRIVATE crumb_manifests)
     add_test(NAME crumb_manifest_tests COMMAND crumb_manifest_tests)
     add_executable(crumb_search_tests tests/search_tests.cpp)
-    target_link_libraries(crumb_search_tests PRIVATE crumb_application)
+    target_link_libraries(crumb_search_tests PRIVATE crumb_search)
     add_test(NAME crumb_search_tests COMMAND crumb_search_tests)
     add_executable(crumb_search_tap_tests tests/search_tap_tests.cpp)
-    target_link_libraries(crumb_search_tap_tests PRIVATE crumb_boundary)
+    target_link_libraries(crumb_search_tap_tests PRIVATE crumb_presentation)
     add_test(NAME crumb_search_tap_tests COMMAND crumb_search_tap_tests)
     add_executable(crumb_user_config_tests tests/user_config_tests.cpp)
-    target_link_libraries(crumb_user_config_tests PRIVATE crumb_boundary)
+    target_link_libraries(crumb_user_config_tests PRIVATE crumb_presentation)
     add_test(NAME crumb_user_config_tests COMMAND crumb_user_config_tests)
     add_executable(crumb_google_drive_tests tests/google_drive_tests.cpp)
     target_link_libraries(crumb_google_drive_tests PRIVATE crumb_google_drive)
     add_test(NAME crumb_google_drive_tests COMMAND crumb_google_drive_tests)
     add_executable(crumb_reconcile_tests tests/reconcile_tests.cpp)
-    target_link_libraries(crumb_reconcile_tests PRIVATE crumb_application crumb_infrastructure)
+    target_link_libraries(crumb_reconcile_tests PRIVATE crumb_manifests crumb_files)
     add_test(NAME crumb_reconcile_tests COMMAND crumb_reconcile_tests)
-    add_executable(crumb_infrastructure_tests tests/infrastructure_tests.cpp)
-    target_link_libraries(crumb_infrastructure_tests PRIVATE crumb_infrastructure)
-    add_test(NAME crumb_infrastructure_tests COMMAND crumb_infrastructure_tests)
+    add_executable(crumb_context_infrastructure_tests tests/infrastructure_tests.cpp)
+    target_link_libraries(crumb_context_infrastructure_tests PRIVATE crumb_files crumb_manifests crumb_search)
+    add_test(NAME crumb_context_infrastructure_tests COMMAND crumb_context_infrastructure_tests)
     add_executable(crumb_command_router_tests tests/command_router_tests.cpp)
-    target_link_libraries(crumb_command_router_tests PRIVATE crumb_boundary crumb_google_drive)
+    target_link_libraries(crumb_command_router_tests PRIVATE crumb_presentation crumb_google_drive)
     add_test(NAME crumb_command_router_tests COMMAND crumb_command_router_tests)
     add_executable(crumb_edge_case_tests tests/edge_case_tests.cpp)
-    target_link_libraries(crumb_edge_case_tests PRIVATE crumb_application)
+    target_link_libraries(crumb_edge_case_tests PRIVATE crumb_files crumb_manifests crumb_search)
     add_test(NAME crumb_edge_case_tests COMMAND crumb_edge_case_tests)
-    add_executable(crumb_boundary_internal_tests tests/boundary_internal_tests.cpp)
-    target_link_libraries(crumb_boundary_internal_tests PRIVATE crumb_boundary crumb_google_drive crumb_infrastructure)
-    add_test(NAME crumb_boundary_internal_tests COMMAND crumb_boundary_internal_tests)
+    add_executable(crumb_presentation_internal_tests tests/boundary_internal_tests.cpp)
+    target_link_libraries(crumb_presentation_internal_tests PRIVATE crumb_presentation)
+    add_test(NAME crumb_presentation_internal_tests COMMAND crumb_presentation_internal_tests)
     add_executable(crumb_persistence_internal_tests tests/persistence_internal_tests.cpp)
-    target_link_libraries(crumb_persistence_internal_tests PRIVATE crumb_boundary crumb_infrastructure ZLIB::ZLIB Threads::Threads)
+    target_link_libraries(crumb_persistence_internal_tests PRIVATE crumb_presentation crumb_files crumb_manifests crumb_search ZLIB::ZLIB Threads::Threads)
     add_test(NAME crumb_persistence_internal_tests COMMAND crumb_persistence_internal_tests)
     add_executable(crumb_plugin_internal_tests tests/plugin_internal_tests.cpp)
     target_link_libraries(crumb_plugin_internal_tests PRIVATE crumb_google_drive)
