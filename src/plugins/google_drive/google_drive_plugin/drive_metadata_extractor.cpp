@@ -1,6 +1,6 @@
 #include "plugins/google_drive/google_drive_plugin/drive_metadata_extractor.hpp"
 
-#include "plugins/google_drive/google_drive_plugin/details.hpp"
+#include "plugins/google_drive/google_drive_plugin/support/details.hpp"
 
 #include <filesystem>
 #include <utility>

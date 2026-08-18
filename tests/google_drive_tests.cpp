@@ -4,7 +4,7 @@
 #include "plugins/google_drive/google_drive_plugin/drive_metadata_extractor.hpp"
 #include "plugins/google_drive/google_drive_plugin/drive_search_index_repository.hpp"
 #include "plugins/google_drive/google_drive_plugin/plugin.hpp"
-#include "plugins/google_drive/google_drive_plugin/testing.hpp"
+#include "plugins/google_drive/google_drive_plugin/support/testing.hpp"
 #include "domain/value_objects/content_hash.hpp"
 #include "domain/value_objects/directory_id.hpp"
 #include "domain/value_objects/file_id.hpp"

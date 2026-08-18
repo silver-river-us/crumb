@@ -1,39 +1,31 @@
 #include "infrastructure/filesystem/native_filesystem.hpp"
-#include "infrastructure/hashing/streaming_hash.hpp"
-#include "domain/search_index/query.hpp"
-#include <chrono>
-#include <algorithm>
 
-#include <fstream>
-#include <iterator>
-#include <string_view>
+#include "infrastructure/hashing/streaming_hash.hpp"
+
+#include <algorithm>
+#include <chrono>
+#include <exception>
 #include <sys/stat.h>
 
 namespace crumb::infrastructure {
 namespace {
-std::int64_t ns(std::filesystem::file_time_type time) {
+std::int64_t file_time_ns(std::filesystem::file_time_type time) {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(time.time_since_epoch()).count();
 }
-std::string mime(const std::string& name) {
+
+std::string mime_type(const std::string& name) {
     const auto dot = name.rfind('.');
-    const auto ext = dot == std::string::npos ? "" : name.substr(dot + 1);
-    if (ext == "pdf") return "application/pdf";
-    if (ext == "md") return "text/markdown";
-    if (ext == "txt") return "text/plain";
-    if (ext == "json") return "application/json";
-    if (ext == "toml") return "application/toml";
+    const auto extension = dot == std::string::npos ? "" : name.substr(dot + 1);
+    if (extension == "pdf") return "application/pdf";
+    if (extension == "md") return "text/markdown";
+    if (extension == "txt") return "text/plain";
+    if (extension == "json") return "application/json";
+    if (extension == "toml") return "application/toml";
     return "application/octet_stream";
 }
 
-std::string search_terms(std::string_view content) {
-    auto terms = domain::SearchQuery::tokenize(content);
-    std::ranges::sort(terms);
-
-    std::string result = "|";
-    for (const auto& term : terms) result += term + "|";
-    return result;
-}
 }  // namespace
+
 std::expected<std::vector<domain::FileSnapshot>, std::string> NativeFileSystem::list_regular_files(
     const domain::DirectoryPath& directory) {
     std::vector<domain::FileSnapshot> result;
@@ -45,11 +37,10 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> NativeFileSystem::
                 !item.is_regular_file())
                 continue;
             const auto name = domain::FileName::create(item.path().filename().string());
-            auto status = item.status();
             domain::FileMetadata metadata;
-            metadata.type = mime(name.value());
+            metadata.type = mime_type(name.value());
             metadata.size = item.file_size();
-            metadata.modified_ns = ns(item.last_write_time());
+            metadata.modified_ns = file_time_ns(item.last_write_time());
             struct stat info = {};
             if (::stat(item.path().c_str(), &info) == 0) {
                 metadata.inode = static_cast<std::uintmax_t>(info.st_ino);
@@ -60,102 +51,17 @@ std::expected<std::vector<domain::FileSnapshot>, std::string> NativeFileSystem::
                     static_cast<std::int64_t>(info.st_birthtimespec.tv_nsec);
 #endif
             }
-            // This lightweight native adapter provides an inexpensive streamed fingerprint.
             StreamingHash hasher(".");
             auto fingerprint = hasher.fingerprint_path(item.path());
             if (!fingerprint) return std::unexpected(fingerprint.error());
             result.push_back({name, std::move(metadata), std::move(fingerprint.value())});
-            (void)status;
         }
     } catch (const std::exception& error) {
         return std::unexpected(error.what());
     }
-    std::ranges::sort(result,
-                      [](const auto& a, const auto& b) { return a.name.value() < b.name.value(); });
+    std::ranges::sort(result, [](const auto& left, const auto& right) {
+        return left.name.value() < right.name.value();
+    });
     return result;
-}
-
-std::expected<domain::FileMetadata, std::string> NativeFileSystem::extract(
-    const domain::DirectoryPath& directory, const domain::FileName& name,
-    domain::FileMetadata base) {
-    const auto dot = name.value().rfind('.');
-    base.title = name.value().substr(0, dot);
-    auto content = read_text_file(directory, name);
-    if (content && content.value())
-        base.extension_fields["crumb.search_terms_v3"] = search_terms(*content.value());
-    return base;
-}
-std::expected<std::vector<std::pair<domain::DirectoryPath, domain::FileName>>, std::string>
-NativeFileSystem::list_regular_files_recursive(const domain::DirectoryPath& directory) {
-    std::vector<std::pair<domain::DirectoryPath, domain::FileName>> result;
-    try {
-        const auto root = std::filesystem::path(directory.value());
-        for (std::filesystem::recursive_directory_iterator
-                 iterator(root, std::filesystem::directory_options::skip_permission_denied),
-             end;
-             iterator != end; ++iterator) {
-            const auto name = iterator->path().filename();
-            if (iterator->is_directory() &&
-                (name == ".git" || name == ".obsidian" || name == ".claude")) {
-                iterator.disable_recursion_pending();
-                continue;
-            }
-            if (name == ".crumb" || name == ".crumb.tmp" || name == ".crumb.index" ||
-                name == ".crumb.index.tmp" || iterator->is_symlink())
-                continue;
-            if (!iterator->is_regular_file()) continue;
-            result.emplace_back(
-                domain::DirectoryPath::create(iterator->path().parent_path().string()),
-                domain::FileName::create(name.string()));
-        }
-    } catch (const std::exception& error) {
-        return std::unexpected(error.what());
-    }
-    return result;
-}
-std::expected<std::vector<domain::DirectoryPath>, std::string>
-NativeFileSystem::list_directories_recursive(const domain::DirectoryPath& directory) {
-    std::vector<domain::DirectoryPath> result;
-    try {
-        const auto root = std::filesystem::path(directory.value());
-        result.push_back(directory);
-        for (std::filesystem::recursive_directory_iterator
-                 iterator(root, std::filesystem::directory_options::skip_permission_denied),
-             end;
-             iterator != end; ++iterator) {
-            const auto name = iterator->path().filename();
-            if (iterator->is_directory() &&
-                (name == ".git" || name == ".obsidian" || name == ".claude")) {
-                iterator.disable_recursion_pending();
-                continue;
-            }
-            if (iterator->is_symlink() || !iterator->is_directory()) continue;
-            result.push_back(domain::DirectoryPath::create(iterator->path().string()));
-        }
-    } catch (const std::exception& error) {
-        return std::unexpected(error.what());
-    }
-    std::ranges::sort(
-        result, [](const auto& left, const auto& right) { return left.value() < right.value(); });
-    return result;
-}
-std::expected<std::optional<std::string>, std::string> NativeFileSystem::read_text_file(
-    const domain::DirectoryPath& directory, const domain::FileName& name) {
-    constexpr std::uintmax_t max_text_file_size = 8ULL * 1024 * 1024;
-    try {
-        const auto path = std::filesystem::path(directory.value()) / name.value();
-        if (!std::filesystem::is_regular_file(path) ||
-            std::filesystem::file_size(path) > max_text_file_size) {
-            return std::nullopt;
-        }
-        std::ifstream input(path, std::ios::binary);
-        if (!input) return std::unexpected("cannot read " + path.string());
-        std::string content((std::istreambuf_iterator<char>(input)),
-                            std::istreambuf_iterator<char>());
-        if (content.find('\0') != std::string::npos) return std::nullopt;
-        return content;
-    } catch (const std::exception& error) {
-        return std::unexpected(error.what());
-    }
 }
 }  // namespace crumb::infrastructure

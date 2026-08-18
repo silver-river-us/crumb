@@ -54,9 +54,13 @@ target_link_libraries(crumb_application PUBLIC crumb_lib)
 
 add_library(crumb_infrastructure
     src/infrastructure/persistence/toml_manifest_mapper.cpp
+    src/infrastructure/persistence/internal/toml_manifest_parser.cpp
     src/infrastructure/persistence/toml_manifest_repository.cpp
     src/infrastructure/persistence/binary_search_index_repository.cpp
+    src/infrastructure/persistence/internal/binary_search_index_codec.cpp
     src/infrastructure/filesystem/native_filesystem.cpp
+    src/infrastructure/filesystem/native_filesystem_text.cpp
+    src/infrastructure/filesystem/native_filesystem_walk.cpp
     src/infrastructure/hashing/streaming_hash.cpp
     src/infrastructure/system/system_clock.cpp
     src/infrastructure/system/ulid_generator.cpp
@@ -65,20 +69,26 @@ target_include_directories(crumb_infrastructure PUBLIC src src/lib)
 target_link_libraries(crumb_infrastructure PRIVATE crumb_lib ZLIB::ZLIB Threads::Threads)
 
 add_library(crumb_google_drive
-    src/plugins/google_drive/google_drive_plugin/details.cpp
+    src/plugins/google_drive/google_drive_plugin/support/details.cpp
+    src/plugins/google_drive/google_drive_plugin/support/command_output.cpp
+    src/plugins/google_drive/google_drive_plugin/support/mount.cpp
     src/plugins/google_drive/google_drive_plugin/drive_file_system.cpp
     src/plugins/google_drive/google_drive_plugin/drive_manifest_repository.cpp
     src/plugins/google_drive/google_drive_plugin/drive_metadata_extractor.cpp
     src/plugins/google_drive/google_drive_plugin/drive_search_index_repository.cpp
     src/plugins/google_drive/google_drive_plugin/plugin.cpp
-    src/plugins/google_drive/google_drive_plugin/testing.cpp
+    src/plugins/google_drive/google_drive_plugin/support/testing.cpp
 )
 target_include_directories(crumb_google_drive PUBLIC src src/lib)
 target_link_libraries(crumb_google_drive PUBLIC crumb_application crumb_infrastructure)
 
 add_library(crumb_boundary
     src/boundary/cli/command_router.cpp
+    src/boundary/cli/command_router_options.cpp
+    src/boundary/cli/command_router_output.cpp
+    src/boundary/cli/command_router_table.cpp
     src/boundary/cli/search_tap.cpp
+    src/boundary/cli/search_tap_html.cpp
     src/boundary/cli/user_config.cpp
 )
 target_include_directories(crumb_boundary PUBLIC src src/lib)
@@ -107,22 +117,32 @@ if(CLANG_TIDY_EXECUTABLE)
                 ${CMAKE_SOURCE_DIR}/src/application/rebuild_search_index.cpp
                 ${CMAKE_SOURCE_DIR}/src/application/search_manifest.cpp
                 ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router.cpp
+                ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router_options.cpp
+                ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router_output.cpp
+                ${CMAKE_SOURCE_DIR}/src/boundary/cli/command_router_table.cpp
                 ${CMAKE_SOURCE_DIR}/src/boundary/cli/search_tap.cpp
+                ${CMAKE_SOURCE_DIR}/src/boundary/cli/search_tap_html.cpp
                 ${CMAKE_SOURCE_DIR}/src/boundary/cli/user_config.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/filesystem/native_filesystem.cpp
+                ${CMAKE_SOURCE_DIR}/src/infrastructure/filesystem/native_filesystem_text.cpp
+                ${CMAKE_SOURCE_DIR}/src/infrastructure/filesystem/native_filesystem_walk.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/hashing/streaming_hash.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/binary_search_index_repository.cpp
+                ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/internal/binary_search_index_codec.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/toml_manifest_mapper.cpp
+                ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/internal/toml_manifest_parser.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/persistence/toml_manifest_repository.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/system/system_clock.cpp
                 ${CMAKE_SOURCE_DIR}/src/infrastructure/system/ulid_generator.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/details.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/details.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/command_output.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/mount.cpp
                 ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_file_system.cpp
                 ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_manifest_repository.cpp
                 ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_metadata_extractor.cpp
                 ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/drive_search_index_repository.cpp
                 ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/plugin.cpp
-                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/testing.cpp
+                ${CMAKE_SOURCE_DIR}/src/plugins/google_drive/google_drive_plugin/support/testing.cpp
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running clang-tidy"
         VERBATIM)

@@ -36,6 +36,11 @@ class CommandRouter {
     int run(int argc, char** argv) const;
 
    private:
+    int run_index(int argc, char** argv) const;
+    int run_index_size(int argc, char** argv) const;
+    int run_scan(const domain::DirectoryPath& directory) const;
+    int run_search(int argc, char** argv) const;
+
     application::ReconcileDirectory& reconcile_;
     application::RebuildSearchIndex& rebuild_index_;
     application::SearchManifest& search_;

@@ -2,6 +2,9 @@
 *.profraw
 *.profdata
 .DS_Store
-.qfile_memory/
 .crumb.index
 .crumb.index.tmp
+aicop-result.toml
+
+.qfile/sessions/
+.qfile/rulesets/

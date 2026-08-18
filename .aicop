@@ -1,0 +1,2 @@
+[thresholds]
+max_lines_of_code_per_file = 150
