@@ -1,7 +1,7 @@
 #include "presentation/cli/user_config.hpp"
 
-#include <_ctype.h>
-#include <_stdlib.h>
+#include <cctype>
+#include <cstdlib>
 #include <cctype>
 #include <cstdlib>
 #include <fstream>

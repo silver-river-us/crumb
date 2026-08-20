@@ -1,6 +1,6 @@
 #pragma once
 
-#include <_time.h>
+#include <ctime>
 #include <cstdint>
 #include <ctime>
 #include <optional>

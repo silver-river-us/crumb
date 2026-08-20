@@ -2,7 +2,7 @@
 #include <sys/stat.h>
 #include <sys/resource.h>
 #include <unistd.h>
-#include <_stdlib.h>
+#include <cstdlib>
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>

@@ -3,7 +3,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <_stdlib.h>
+#include <cstdlib>
 #include <array>
 #include <cerrno>
 #include <cstdlib>

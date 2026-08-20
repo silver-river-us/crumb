@@ -1,6 +1,6 @@
 #include "google_drive/infrastructure/google_drive_plugin/details.hpp"
 
-#include <_stdlib.h>
+#include <cstdlib>
 
 #include <algorithm>
 #include <cstdint>
