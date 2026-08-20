@@ -1,13 +1,24 @@
 #include "google_drive/infrastructure/google_drive_plugin/drive_file_system.hpp"
 
-#include "google_drive/infrastructure/google_drive_plugin/details.hpp"
-#include "files/infrastructure/native_filesystem.hpp"
-
+#include <sys/stat.h>
+#include <time.h>
 #include <algorithm>
 #include <cstdint>
 #include <exception>
-#include <sys/stat.h>
 #include <utility>
+#include <compare>
+#include <expected>
+#include <filesystem>
+#include <optional>
+#include <vector>
+
+#include "google_drive/infrastructure/google_drive_plugin/details.hpp"
+#include "files/infrastructure/native_filesystem.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/file_snapshot.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
 
 namespace crumb::plugins::google_drive {
 

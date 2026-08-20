@@ -1,13 +1,32 @@
-#include "search/application/search_manifest/search.hpp"
-#include "search/domain/search_index/builder.hpp"
-#include "search/domain/search_index/query.hpp"
-#include "files/domain/value_objects/value_objects.hpp"
-
 #include <algorithm>
 #include <chrono>
 #include <map>
 #include <string>
 #include <utility>
+#include <compare>
+#include <cstddef>
+#include <cstdint>
+#include <expected>
+#include <optional>
+#include <string_view>
+#include <vector>
+
+#include "search/application/search_manifest/search.hpp"
+#include "search/domain/search_index/builder.hpp"
+#include "search/domain/search_index/query.hpp"
+#include "files/domain/value_objects/value_objects.hpp"
+#include "files/application/filesystem.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "manifests/application/manifest_repository.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "manifests/domain/file_entry.hpp"
+#include "search/application/search_index_repository.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/application/search_manifest/trace.hpp"
+#include "search/domain/search_index/index.hpp"
 
 namespace crumb::application {
 namespace {

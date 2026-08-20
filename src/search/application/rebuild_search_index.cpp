@@ -1,5 +1,16 @@
 #include "search/application/rebuild_search_index.hpp"
+
+#include <optional>
+#include <utility>
+#include <vector>
+
 #include "search/domain/search_index/builder.hpp"
+#include "files/application/filesystem.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "manifests/application/manifest_repository.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "manifests/domain/file_entry.hpp"
+#include "search/application/search_index_repository.hpp"
 
 namespace crumb::application {
 std::expected<void, std::string> RebuildSearchIndex::execute(

@@ -1,8 +1,19 @@
-#include "manifests/domain/directory_manifest.hpp"
-#include "manifests/infrastructure/toml_manifest_mapper.hpp"
-
 #include <cassert>
 #include <string>
+#include <expected>
+#include <optional>
+#include <string_view>
+#include <vector>
+
+#include "manifests/domain/directory_manifest.hpp"
+#include "manifests/infrastructure/toml_manifest_mapper.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+#include "manifests/domain/file_entry.hpp"
 
 int main() {
     using namespace crumb::domain;

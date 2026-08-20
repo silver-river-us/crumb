@@ -1,13 +1,21 @@
-#include "presentation/cli/user_config.hpp"
-#include "search/infrastructure/binary_search_index_repository.hpp"
-#include "manifests/infrastructure/toml_manifest_repository.hpp"
-
 #include <zlib.h>
-
+#include <zconf.h>
 #include <cassert>
 #include <stdexcept>
 #include <sstream>
 #include <string>
+#include <cstdint>
+#include <expected>
+#include <optional>
+#include <string_view>
+#include <vector>
+
+#include "presentation/cli/user_config.hpp"
+#include "search/infrastructure/binary_search_index_repository.hpp"
+#include "manifests/infrastructure/toml_manifest_repository.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "search/domain/search_index/index.hpp"
 
 namespace {
 std::expected<std::optional<crumb::domain::DirectoryManifest>, std::string> throwing_load(

@@ -1,3 +1,18 @@
+#include <_stdlib.h>
+#include <sys/types.h>
+#include <cassert>
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <optional>
+#include <string>
+#include <vector>
+#include <cstdint>
+#include <expected>
+#include <string_view>
+
 #include "files/infrastructure/native_filesystem.hpp"
 #include "google_drive/infrastructure/google_drive_plugin/drive_file_system.hpp"
 #include "google_drive/infrastructure/google_drive_plugin/drive_manifest_repository.hpp"
@@ -14,16 +29,15 @@
 #include "files/application/id_generator.hpp"
 #include "manifests/application/manifest_repository.hpp"
 #include "search/application/search_index_repository.hpp"
-
-#include <cassert>
-#include <chrono>
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
-#include <map>
-#include <optional>
-#include <string>
-#include <vector>
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/file_snapshot.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "manifests/application/reconcile_directory/result.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/domain/search_index/index.hpp"
 
 #ifdef __APPLE__
 #include <sys/xattr.h>

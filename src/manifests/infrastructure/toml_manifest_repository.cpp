@@ -1,9 +1,16 @@
 #include "manifests/infrastructure/toml_manifest_repository.hpp"
+
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <thread>
+#include <cstddef>
+#include <exception>
+#include <iterator>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 namespace crumb::infrastructure {
 namespace testing {

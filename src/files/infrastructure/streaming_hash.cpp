@@ -1,8 +1,15 @@
 #include "files/infrastructure/streaming_hash.hpp"
+
 #include <array>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <cstddef>
+#include <cstdint>
+
+#include "files/domain/value_objects/content_hash.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
 
 namespace crumb::infrastructure {
 std::expected<std::string, std::string> StreamingHash::hash_file(const std::filesystem::path& path,

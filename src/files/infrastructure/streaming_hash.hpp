@@ -1,6 +1,13 @@
 #pragma once
-#include "files/application/fingerprint_service.hpp"
 #include <filesystem>
+#include <expected>
+#include <string>
+#include <string_view>
+#include <utility>
+
+#include "files/application/fingerprint_service.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+
 namespace crumb::infrastructure {
 class StreamingHash final : public ports::FingerprintService {
    public:

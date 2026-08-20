@@ -1,12 +1,34 @@
+#include <cassert>
+#include <map>
+#include <optional>
+#include <cstdint>
+#include <expected>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
 #include "search/application/search_manifest/search.hpp"
 #include "search/application/rebuild_search_index.hpp"
 #include "search/domain/search_index/builder.hpp"
 #include "search/domain/search_index/query.hpp"
 #include "files/domain/value_objects/value_objects.hpp"
-
-#include <cassert>
-#include <map>
-#include <optional>
+#include "files/application/filesystem.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/file_snapshot.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+#include "manifests/application/manifest_repository.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "manifests/domain/file_entry.hpp"
+#include "search/application/search_index_repository.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/application/search_manifest/trace.hpp"
+#include "search/domain/search_index/index.hpp"
 
 namespace {
 class InMemoryManifestRepository final : public crumb::ports::ManifestRepository {

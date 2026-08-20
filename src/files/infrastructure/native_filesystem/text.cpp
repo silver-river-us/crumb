@@ -1,10 +1,21 @@
-#include "files/infrastructure/native_filesystem.hpp"
-
-#include "search/domain/search_index/query.hpp"
-
 #include <exception>
 #include <fstream>
 #include <iterator>
+#include <algorithm>
+#include <cstdint>
+#include <expected>
+#include <filesystem>
+#include <map>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "files/infrastructure/native_filesystem.hpp"
+#include "search/domain/search_index/query.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
 
 namespace crumb::infrastructure {
 std::expected<domain::FileMetadata, std::string> NativeFileSystem::extract(

@@ -1,12 +1,16 @@
 #pragma once
 
-#include "files/domain/value_objects/directory_path.hpp"
-#include "files/application/filesystem.hpp"
-#include "manifests/application/manifest_repository.hpp"
-#include "search/application/search_index_repository.hpp"
-
 #include <expected>
 #include <string>
+
+namespace crumb::domain {
+class DirectoryPath;
+}
+namespace crumb::ports {
+class FileSystem;
+class ManifestRepository;
+class SearchIndexRepository;
+}  // namespace crumb::ports
 
 namespace crumb::application {
 

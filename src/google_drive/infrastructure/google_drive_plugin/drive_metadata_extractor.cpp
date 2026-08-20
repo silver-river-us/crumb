@@ -1,9 +1,15 @@
 #include "google_drive/infrastructure/google_drive_plugin/drive_metadata_extractor.hpp"
 
-#include "google_drive/infrastructure/google_drive_plugin/details.hpp"
-
 #include <filesystem>
 #include <utility>
+#include <expected>
+#include <map>
+#include <optional>
+
+#include "google_drive/infrastructure/google_drive_plugin/details.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
 
 namespace crumb::plugins::google_drive {
 

@@ -1,13 +1,11 @@
 #pragma once
 
-#include "search/domain/search_index/index.hpp"
-#include "search/application/search_index_repository.hpp"
-
 #include <cstdint>
-#include <expected>
 #include <filesystem>
 #include <string>
 #include <utility>
+
+#include "search/application/search_index_repository.hpp"
 
 namespace crumb::plugins::google_drive {
 

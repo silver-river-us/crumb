@@ -1,5 +1,15 @@
-#include "search/application/rebuild_search_index.hpp"
+#include <cassert>
+#include <optional>
+#include <string>
+#include <cstdint>
+#include <expected>
+#include <initializer_list>
+#include <map>
+#include <string_view>
+#include <utility>
+#include <vector>
 
+#include "search/application/rebuild_search_index.hpp"
 #include "search/application/search_manifest/search.hpp"
 #include "manifests/domain/directory_manifest.hpp"
 #include "files/domain/value_objects/content_hash.hpp"
@@ -7,17 +17,19 @@
 #include "files/domain/value_objects/file_id.hpp"
 #include "files/domain/value_objects/fingerprint.hpp"
 #include "files/domain/value_objects/value_objects.hpp"
-
 #include "manifests/domain/file_identity_matcher.hpp"
-
 #include "files/application/filesystem.hpp"
-
 #include "manifests/application/manifest_repository.hpp"
 #include "search/application/search_index_repository.hpp"
-
-#include <cassert>
-#include <optional>
-#include <string>
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/file_snapshot.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/validated_string.hpp"
+#include "manifests/domain/file_entry.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/domain/search_index/index.hpp"
 
 namespace {
 using namespace crumb;

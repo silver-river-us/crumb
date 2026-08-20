@@ -1,22 +1,36 @@
-#include "files/infrastructure/native_filesystem.hpp"
-#include "search/domain/search_index/builder.hpp"
-
-#include "files/infrastructure/streaming_hash.hpp"
-#include "search/infrastructure/binary_search_index_repository.hpp"
-#include "manifests/infrastructure/toml_manifest_mapper.hpp"
-#include "manifests/infrastructure/toml_manifest_repository.hpp"
-
+#include <sys/stat.h>
+#include <zlib.h>
+#include <zconf.h>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-
 #include <string>
-#include <sys/stat.h>
 #include <tuple>
 #include <vector>
-#include <zlib.h>
+#include <expected>
+#include <map>
+#include <optional>
+#include <string_view>
+#include <utility>
+
+#include "files/infrastructure/native_filesystem.hpp"
+#include "search/domain/search_index/builder.hpp"
+#include "files/infrastructure/streaming_hash.hpp"
+#include "search/infrastructure/binary_search_index_repository.hpp"
+#include "manifests/infrastructure/toml_manifest_mapper.hpp"
+#include "manifests/infrastructure/toml_manifest_repository.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/file_snapshot.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "manifests/domain/file_entry.hpp"
+#include "search/domain/search_index/index.hpp"
 
 namespace {
 using namespace crumb;

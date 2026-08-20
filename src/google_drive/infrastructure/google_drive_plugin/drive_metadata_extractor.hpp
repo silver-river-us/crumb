@@ -2,7 +2,6 @@
 
 #include "files/application/metadata_extractor.hpp"
 
-#include <expected>
 #include <string>
 
 namespace crumb::plugins::google_drive {

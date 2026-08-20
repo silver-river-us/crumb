@@ -1,11 +1,16 @@
 #include "search/infrastructure/binary_search_index_repository.hpp"
 
-#include "search/infrastructure/binary_search_index_repository/codec.hpp"
-
+#include <zlib.h>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <exception>
+#include <string_view>
+#include <system_error>
+
+#include "search/infrastructure/binary_search_index_repository/codec.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
 
 namespace crumb::infrastructure {
 namespace testing {

@@ -1,8 +1,19 @@
-#include "presentation/cli/search_tap/internal.hpp"
-
+#include <_time.h>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
+#include <ctime>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "presentation/cli/search_tap/internal.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/application/search_manifest/trace.hpp"
 
 namespace crumb::boundary::detail {
 std::string render_html(std::string_view query, const domain::DirectoryPath& directory,
@@ -29,8 +40,11 @@ std::string render_html(std::string_view query, const domain::DirectoryPath& dir
            << format_duration(total) << " · " << result.matches.size()
            << " matches</div><section aria-label=\"Search waterfall\">";
     for (const auto& span : result.trace) {
-        const auto offset = total == 0 ? 0.0 : 100.0 * span.offset_us / total;
-        const auto width = total == 0 ? 0.0 : 100.0 * span.duration_us / total;
+        const auto total_duration_us = static_cast<double>(total);
+        const auto offset =
+            total == 0 ? 0.0 : 100.0 * static_cast<double>(span.offset_us) / total_duration_us;
+        const auto width =
+            total == 0 ? 0.0 : 100.0 * static_cast<double>(span.duration_us) / total_duration_us;
         output << "<div class=\"row\"><div class=\"name\">" << html_escape(span.name)
                << "</div><div class=\"track\"><div class=\"bar\" style=\"width:" << std::fixed
                << std::setprecision(2) << width << "%;left:" << offset << "%\"></div></div><div>"

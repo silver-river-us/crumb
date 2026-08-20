@@ -1,9 +1,17 @@
-#include "presentation/cli/search_tap.hpp"
-
 #include <cassert>
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <optional>
+#include <string_view>
+#include <vector>
+
+#include "presentation/cli/search_tap.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/application/search_manifest/trace.hpp"
 
 int main() {
     const auto directory = crumb::domain::DirectoryPath::create(".");

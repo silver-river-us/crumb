@@ -1,8 +1,15 @@
-#include "files/infrastructure/native_filesystem.hpp"
-
 #include <algorithm>
 #include <exception>
 #include <filesystem>
+#include <compare>
+#include <expected>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "files/infrastructure/native_filesystem.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
 
 namespace crumb::infrastructure {
 namespace {

@@ -1,5 +1,12 @@
 #include "files/infrastructure/ulid_generator.hpp"
+
 #include <chrono>
+#include <array>
+#include <cstddef>
+#include <string_view>
+
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/file_id.hpp"
 
 namespace crumb::infrastructure {
 UlidGenerator::UlidGenerator() : random_(std::random_device{}()) {}

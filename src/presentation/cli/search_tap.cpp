@@ -1,10 +1,14 @@
 #include "presentation/cli/search_tap.hpp"
 
-#include "presentation/cli/search_tap/internal.hpp"
-
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
+#include <vector>
+
+#include "presentation/cli/search_tap/internal.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/application/search_manifest/trace.hpp"
 
 namespace crumb::boundary::detail {
 std::string format_result_date(std::optional<std::int64_t> nanoseconds, LocalTime local_time) {

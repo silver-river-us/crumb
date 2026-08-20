@@ -1,3 +1,11 @@
+#include <vector>
+#include <cstddef>
+#include <expected>
+#include <map>
+#include <optional>
+#include <string>
+#include <utility>
+
 #include "manifests/application/reconcile_directory/reconcile.hpp"
 #include "manifests/domain/directory_manifest.hpp"
 #include "manifests/domain/file_identity_matcher.hpp"
@@ -6,8 +14,14 @@
 #include "files/application/id_generator.hpp"
 #include "manifests/application/manifest_repository.hpp"
 #include "files/application/metadata_extractor.hpp"
-
-#include <vector>
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/file_snapshot.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+#include "manifests/application/reconcile_directory/result.hpp"
+#include "manifests/domain/file_entry.hpp"
 
 namespace crumb::application {
 namespace {

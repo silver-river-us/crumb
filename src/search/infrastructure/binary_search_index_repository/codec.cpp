@@ -5,6 +5,11 @@
 #include <istream>
 #include <ostream>
 #include <utility>
+#include <optional>
+#include <vector>
+
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
 
 namespace crumb::infrastructure::detail {
 namespace {

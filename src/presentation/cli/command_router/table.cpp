@@ -1,11 +1,19 @@
-#include "presentation/cli/command_router/internal.hpp"
-
+#include <unistd.h>
+#include <_stdio.h>
 #include <cstdio>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
 #include <vector>
-#include <unistd.h>
+#include <optional>
+#include <string>
+#include <string_view>
+
+#include "presentation/cli/command_router/internal.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "presentation/cli/command_router.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
 
 namespace crumb::boundary {
 namespace testing {

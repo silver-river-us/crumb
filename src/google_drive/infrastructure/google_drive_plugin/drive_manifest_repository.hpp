@@ -1,12 +1,15 @@
 #pragma once
 
-#include "manifests/domain/directory_manifest.hpp"
-#include "manifests/application/manifest_repository.hpp"
-
 #include <expected>
 #include <filesystem>
-#include <optional>
 #include <string>
+
+#include "manifests/application/manifest_repository.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+
+namespace crumb::domain {
+class DirectoryPath;
+}
 
 namespace crumb::plugins::google_drive {
 

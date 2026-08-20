@@ -1,6 +1,12 @@
 #pragma once
+#include <expected>
+#include <optional>
+#include <string>
+
 #include "manifests/infrastructure/toml_manifest_mapper.hpp"
 #include "manifests/application/manifest_repository.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "manifests/domain/directory_manifest.hpp"
 
 namespace crumb::infrastructure {
 class TomlManifestRepository;

@@ -1,11 +1,24 @@
 #include "files/infrastructure/native_filesystem.hpp"
 
-#include "files/infrastructure/streaming_hash.hpp"
-
+#include <sys/stat.h>
+#include <time.h>
 #include <algorithm>
 #include <chrono>
 #include <exception>
-#include <sys/stat.h>
+#include <compare>
+#include <cstdint>
+#include <expected>
+#include <filesystem>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "files/infrastructure/streaming_hash.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/file_snapshot.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
 
 namespace crumb::infrastructure {
 namespace {

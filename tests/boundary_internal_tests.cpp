@@ -1,18 +1,29 @@
-#include "presentation/cli/command_router.hpp"
-#include "presentation/cli/search_tap.hpp"
-
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/resource.h>
+#include <unistd.h>
+#include <_stdlib.h>
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <fcntl.h>
 #include <optional>
 #include <sstream>
 #include <string>
-#include <sys/stat.h>
-#include <sys/resource.h>
-#include <unistd.h>
 #include <vector>
+#include <ctime>
+#include <string_view>
+#include <utility>
+#include <cwchar>
+
+#include "presentation/cli/command_router.hpp"
+#include "presentation/cli/search_tap.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+
+struct tm;
 
 namespace {
 using namespace crumb;

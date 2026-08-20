@@ -1,11 +1,17 @@
 #include "google_drive/infrastructure/google_drive_plugin/details.hpp"
 
+#include <_stdlib.h>
+
 #include <algorithm>
-#include <cstdlib>
-#include <exception>
-#include <iomanip>
+#include <cstdint>
+#include <expected>
+#include <filesystem>
 #include <sstream>
+#include <string>
+#include <string_view>
 #include <vector>
+
+#include "files/domain/value_objects/directory_path.hpp"
 
 namespace crumb::plugins::google_drive::detail {
 namespace {

@@ -1,12 +1,25 @@
 #include "presentation/cli/command_router.hpp"
 
-#include "presentation/cli/command_router/internal.hpp"
-
 #include <iostream>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <chrono>
+#include <expected>
+#include <vector>
+
+#include "presentation/cli/command_router/internal.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "google_drive/infrastructure/google_drive_plugin/plugin.hpp"
+#include "manifests/application/reconcile_directory/reconcile.hpp"
+#include "manifests/application/reconcile_directory/result.hpp"
+#include "presentation/cli/search_tap.hpp"
+#include "search/application/index_size.hpp"
+#include "search/application/rebuild_search_index.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
+#include "search/application/search_manifest/search.hpp"
 
 namespace crumb::boundary {
 namespace {

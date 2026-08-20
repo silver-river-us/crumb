@@ -1,12 +1,18 @@
 #pragma once
 
-#include "search/application/search_manifest/result.hpp"
-
+#include <_time.h>
 #include <cstdint>
 #include <ctime>
 #include <optional>
 #include <string>
 #include <string_view>
+
+namespace crumb::application {
+struct SearchResult;
+}
+namespace crumb::domain {
+class DirectoryPath;
+}
 
 namespace crumb::boundary {
 

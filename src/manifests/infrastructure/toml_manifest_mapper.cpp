@@ -1,8 +1,19 @@
 #include "manifests/infrastructure/toml_manifest_mapper.hpp"
 
-#include "manifests/infrastructure/toml_manifest_mapper/parser.hpp"
-
 #include <sstream>
+#include <map>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "manifests/infrastructure/toml_manifest_mapper/parser.hpp"
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+#include "manifests/domain/file_entry.hpp"
 
 namespace crumb::infrastructure {
 namespace {

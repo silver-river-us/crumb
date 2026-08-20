@@ -3,6 +3,19 @@
 #include <charconv>
 #include <exception>
 #include <unordered_map>
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <system_error>
+#include <utility>
+
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
 
 namespace crumb::infrastructure::detail {
 namespace {
@@ -123,8 +136,10 @@ std::expected<domain::DirectoryManifest, std::string> parse_manifest(
             const auto modified = integer_field(values, "modified_ns");
             if (!id || !type || !fingerprint || !size || !modified)
                 return std::unexpected("file record missing required field: " + name);
-            domain::FileMetadata metadata{
-                .type = *type, .size = *size, .modified_ns = static_cast<std::int64_t>(*modified)};
+            domain::FileMetadata metadata;
+            metadata.type = *type;
+            metadata.size = *size;
+            metadata.modified_ns = static_cast<std::int64_t>(*modified);
             for (const auto& [key, value] : values)
                 assign_optional_metadata(metadata, values, key, value);
             manifest->add({domain::FileId::create(*id), domain::FileName::create(name),

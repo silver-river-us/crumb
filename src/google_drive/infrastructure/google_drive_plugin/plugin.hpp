@@ -1,5 +1,11 @@
 #pragma once
 
+#include <cstddef>
+#include <expected>
+#include <optional>
+#include <string>
+#include <string_view>
+
 #include "search/application/rebuild_search_index.hpp"
 #include "manifests/application/reconcile_directory/reconcile.hpp"
 #include "search/application/search_manifest/search.hpp"
@@ -7,12 +13,22 @@
 #include "google_drive/infrastructure/google_drive_plugin/drive_manifest_repository.hpp"
 #include "google_drive/infrastructure/google_drive_plugin/drive_metadata_extractor.hpp"
 #include "google_drive/infrastructure/google_drive_plugin/drive_search_index_repository.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "manifests/application/reconcile_directory/result.hpp"
+#include "search/application/search_manifest/result.hpp"
 
-#include <cstddef>
-#include <expected>
-#include <optional>
-#include <string>
-#include <string_view>
+namespace crumb {
+namespace infrastructure {
+class NativeFileSystem;
+}  // namespace infrastructure
+namespace ports {
+class Clock;
+class FingerprintService;
+class IdGenerator;
+class ManifestRepository;
+class SearchIndexRepository;
+}  // namespace ports
+}  // namespace crumb
 
 namespace crumb::plugins::google_drive {
 

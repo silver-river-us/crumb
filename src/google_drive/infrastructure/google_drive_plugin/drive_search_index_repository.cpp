@@ -1,6 +1,10 @@
 #include "google_drive/infrastructure/google_drive_plugin/drive_search_index_repository.hpp"
 
 #include <exception>
+#include <expected>
+
+#include "files/domain/value_objects/directory_path.hpp"
+#include "search/domain/search_index/index.hpp"
 
 namespace crumb::plugins::google_drive {
 

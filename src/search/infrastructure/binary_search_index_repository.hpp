@@ -1,9 +1,14 @@
 #pragma once
 
-#include "search/application/search_index_repository.hpp"
+#include <zconf.h>
 
+#include <cstdint>
+#include <expected>
 #include <istream>
-#include <zlib.h>
+#include <string>
+
+#include "search/application/search_index_repository.hpp"
+#include "search/domain/search_index/index.hpp"
 
 namespace crumb::infrastructure {
 namespace testing {

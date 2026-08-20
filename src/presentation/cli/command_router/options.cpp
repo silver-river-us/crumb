@@ -1,7 +1,12 @@
-#include "presentation/cli/command_router/internal.hpp"
-
 #include <charconv>
 #include <string_view>
+#include <expected>
+#include <string>
+#include <system_error>
+#include <vector>
+
+#include "presentation/cli/command_router/internal.hpp"
+#include "presentation/cli/search_tap.hpp"
 
 namespace crumb::boundary::detail {
 namespace {

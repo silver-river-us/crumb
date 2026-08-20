@@ -1,9 +1,15 @@
 #include "google_drive/infrastructure/google_drive_plugin/drive_manifest_repository.hpp"
 
-#include "google_drive/infrastructure/google_drive_plugin/details.hpp"
-
 #include <exception>
 #include <utility>
+#include <expected>
+#include <optional>
+#include <vector>
+
+#include "google_drive/infrastructure/google_drive_plugin/details.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "manifests/domain/file_entry.hpp"
 
 namespace crumb::plugins::google_drive {
 

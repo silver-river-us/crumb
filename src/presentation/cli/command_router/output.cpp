@@ -1,11 +1,22 @@
-#include "presentation/cli/command_router/internal.hpp"
-
+#include <unistd.h>
+#include <_time.h>
 #include <ctime>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
 #include <string_view>
-#include <unistd.h>
+#include <chrono>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <system_error>
+#include <vector>
+
+#include "presentation/cli/command_router/internal.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "search/application/search_manifest/match.hpp"
+#include "search/application/search_manifest/result.hpp"
 
 namespace crumb::boundary::detail {
 void print_elapsed(std::ostream& output, std::chrono::microseconds elapsed) {

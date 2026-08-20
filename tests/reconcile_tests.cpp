@@ -1,13 +1,27 @@
+#include <cassert>
+#include <filesystem>
+#include <fstream>
+#include <expected>
+#include <map>
+#include <optional>
+#include <string>
+#include <vector>
+
 #include "manifests/application/reconcile_directory/reconcile.hpp"
 #include "files/infrastructure/native_filesystem.hpp"
 #include "files/application/clock.hpp"
 #include "files/application/fingerprint_service.hpp"
 #include "files/application/id_generator.hpp"
 #include "manifests/application/manifest_repository.hpp"
-
-#include <cassert>
-#include <filesystem>
-#include <fstream>
+#include "files/domain/file_metadata.hpp"
+#include "files/domain/value_objects/content_hash.hpp"
+#include "files/domain/value_objects/directory_id.hpp"
+#include "files/domain/value_objects/directory_path.hpp"
+#include "files/domain/value_objects/file_id.hpp"
+#include "files/domain/value_objects/file_name.hpp"
+#include "files/domain/value_objects/fingerprint.hpp"
+#include "manifests/domain/directory_manifest.hpp"
+#include "manifests/domain/file_entry.hpp"
 
 namespace {
 class InMemoryManifestRepository final : public crumb::ports::ManifestRepository {

@@ -1,12 +1,28 @@
 #pragma once
+
 #include <cstdio>
 #include <ostream>
-#include "search/application/index_size.hpp"
-#include "manifests/application/reconcile_directory/reconcile.hpp"
-#include "search/application/rebuild_search_index.hpp"
-#include "search/application/search_manifest/search.hpp"
+#include <string>
+#include <string_view>
+#include <utility>
+
 #include "presentation/cli/user_config.hpp"
-#include "google_drive/infrastructure/google_drive_plugin/plugin.hpp"
+
+namespace crumb::application {
+class IndexSize;
+class RebuildSearchIndex;
+class ReconcileDirectory;
+class SearchManifest;
+struct SearchMatch;
+struct SearchResult;
+}  // namespace crumb::application
+namespace crumb::domain {
+class DirectoryPath;
+}
+namespace crumb::plugins::google_drive {
+class GoogleDrivePlugin;
+}
+
 namespace crumb::boundary {
 
 namespace testing {
